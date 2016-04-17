@@ -57,6 +57,7 @@ def _upsample2d(src, method, out):
 
 
 def _downsample2d(src, method, out):
+
     src_w = src.shape[-1]
     src_h = src.shape[-2]
     out_w = out.shape[-1]
@@ -91,7 +92,7 @@ def _downsample2d(src, method, out):
                 for src_y in range(src_y0, src_y1 + 1):
                     for src_x in range(src_x0, src_x1 + 1):
                         v = src[src_y, src_x]
-                        if not np.isnan(v):
+                        if np.isfinite(v):
                             value = v
                             if method == DS_FIRST:
                                 done = True
@@ -135,7 +136,7 @@ def _downsample2d(src, method, out):
                     for src_x in range(src_x0, src_x1 + 1):
                         wx = wx0 if (src_x == src_x0) else wx1 if (src_x == src_x1) else 1.0
                         v = src[src_y, src_x]
-                        if not np.isnan(v):
+                        if np.isfinite(v):
                             w = wx * wy
                             for i in range(n):
                                 if v == val[i]:
@@ -184,7 +185,7 @@ def _downsample2d(src, method, out):
                     for src_x in range(src_x0, src_x1 + 1):
                         wx = wx0 if (src_x == src_x0) else wx1 if (src_x == src_x1) else 1.0
                         v = src[src_y, src_x]
-                        if not np.isnan(v):
+                        if np.isfinite(v):
                             w = wx * wy
                             v_sum += w * v
                             w_sum += w
@@ -195,30 +196,3 @@ def _downsample2d(src, method, out):
 
     return out
 
-
-def _resample2d(src, ds_method, us_method, out):
-
-    src_w = src.shape[-1]
-    src_h = src.shape[-2]
-    out_w = out.shape[-1]
-    out_h = out.shape[-2]
-
-    if out_w < src_w and out_h < src_h:
-        return _downsample2d(src, ds_method, out)
-    elif out_w < src_w:
-        if out_h > src_h:
-            temp = np.zeros((src_h, out_w), dtype=src.dtype)
-            temp = _downsample2d(src, ds_method, temp)
-            return _upsample2d(temp, us_method, out)
-        else:
-            return _downsample2d(src, ds_method, out)
-    elif out_h < src_h:
-        if out_w > src_w:
-            temp = np.zeros((out_h, src_w), dtype=src.dtype)
-            temp = _downsample2d(src, ds_method, temp)
-            return _upsample2d(temp, us_method, out)
-        else:
-            return _downsample2d(src, ds_method, out)
-    elif out_w > src_w or out_h > src_h:
-        return _upsample2d(src, us_method, out)
-    return src

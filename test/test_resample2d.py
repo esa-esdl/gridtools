@@ -4,19 +4,9 @@ import numpy as np
 from numpy.testing import assert_almost_equal
 
 import gridtools as gt
-import gridtools.resample._resample2d_numba as nbimpl
-import gridtools.resample._resample2d_python as pyimpl
 
 
 def _test_resample2d(src, out_w, out_h, ds_method, us_method, desired_out):
-    actual = pyimpl._resample2d(np.array(src), ds_method, us_method,
-                                np.zeros((out_h, out_w), dtype=np.float64))
-    assert_almost_equal(actual, np.array(desired_out), err_msg='Python resample 2D impl.')
-
-    actual = nbimpl._resample2d(np.array(src), ds_method, us_method,
-                                np.zeros((out_h, out_w), dtype=np.float64))
-    assert_almost_equal(actual, np.array(desired_out), err_msg='Numba resample 2D impl.')
-
     actual = gt.resample.resample2d(np.array(src), out_w, out_h,
                                     ds_method=ds_method,
                                     us_method=us_method)
