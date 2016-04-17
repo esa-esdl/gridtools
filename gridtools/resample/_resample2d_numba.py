@@ -9,6 +9,7 @@ from ._constants import *
 
 @nb.jit(nopython=True)
 def _upsample2d(src, method, out):
+
     src_w = src.shape[-1]
     src_h = src.shape[-2]
     out_w = out.shape[-1]
@@ -58,6 +59,7 @@ def _upsample2d(src, method, out):
 
 @nb.jit(nopython=True)
 def _downsample2d(src, method, out):
+
     src_w = src.shape[-1]
     src_h = src.shape[-2]
     out_w = out.shape[-1]
@@ -78,15 +80,15 @@ def _downsample2d(src, method, out):
             src_yf1 = src_yf0 + scale_y
             src_y0 = int(src_yf0)
             src_y1 = int(src_yf1)
-            if src_y1 >= src_h:
-                src_y1 = src_h - 1
+            if src_y1 == src_yf1 and src_y1 > src_y0:
+                src_y1 -= 1
             for out_x in range(out_w):
                 src_xf0 = scale_x * out_x
                 src_xf1 = src_xf0 + scale_x
                 src_x0 = int(src_xf0)
                 src_x1 = int(src_xf1)
-                if src_x1 >= src_w:
-                    src_x1 = src_w - 1
+                if src_x1 == src_xf1 and src_x1 > src_x0:
+                    src_x1 -= 1
                 done = False
                 value = np.nan
                 for src_y in range(src_y0, src_y1 + 1):

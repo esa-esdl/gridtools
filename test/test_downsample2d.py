@@ -70,19 +70,19 @@ class Downsample2dTest(unittest.TestCase):
 
     def test_aggregation_first(self):
         _test_downsample2d([[0.6, 0.2, 3.4],
-                            [1.4, 1.6, 1.0],
+                            [1.4, NAN, 1.0],
                             [4.0, 2.8, 3.0]],
                            2, 2, gt.resample.DS_FIRST,
                            [[0.6, 0.2],
-                            [1.4, 1.6]])
+                            [1.4, 1.0]])
 
         _test_downsample2d([[0.9, 0.5, 3.0, 4.0],
-                            [1.1, 1.5, 1.0, 2.0],
-                            [4.0, 2.1, 3.0, 5.0],
-                            [3.0, 4.9, 3.0, 1.0]],
+                            [1.1, 1.5, 1.0, NAN],
+                            [NAN, NAN, 3.0, 5.0],
+                            [3.0, 4.9, NAN, 1.0]],
                            2, 2, gt.resample.DS_FIRST,
                            [[0.9, 3.0],
-                            [4.0, 3.0]])
+                            [3.0, 3.0]])
 
     def test_aggregation_last(self):
         _test_downsample2d([[0.6, 0.2, 3.4],
@@ -94,8 +94,8 @@ class Downsample2dTest(unittest.TestCase):
 
         _test_downsample2d([[0.9, 0.5, 3.0, 4.0],
                             [1.1, 1.5, 1.0, NAN],
-                            [4.0, 2.1, 3.0, 5.0],
-                            [3.0, 4.9, NAN, 1.0]],
+                            [NAN, 2.1, 3.0, 5.0],
+                            [NAN, NAN, 4.2, NAN]],
                            2, 2, gt.resample.DS_LAST,
-                           [[3.0, 5.0],
-                            [4.9, 1.0]])
+                           [[1.5, 1.0],
+                            [2.1, 4.2]])
