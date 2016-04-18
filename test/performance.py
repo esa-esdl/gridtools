@@ -1,13 +1,11 @@
 import timeit
 
 import numpy as np
-from gridtools.resample import *
-import gridtools.resample._resample2d_python as pyimpl
-import gridtools.resample._resample2d_numba as nbimpl
+import gridtools.resample as rs
 
-MAIN = 'from __main__ import np, pyimpl, nbimpl, a, out, US_LINEAR, DS_MEAN'
+MAIN = 'from __main__ import np, rs, a, out'
 times = 100
-N = 7
+N = 5
 
 print('\nUpsampling:')
 print('No\tSize\tPython\tNumba\tNumba-Gain')
@@ -15,9 +13,8 @@ s = 4
 for i in range(N):
     a = np.random.rand(s, s)
     out = np.zeros((int(s * 2.5), int(s * 2.1)), dtype=np.float64)
-    t1 = timeit.timeit(setup=MAIN, number=times, stmt='pyimpl._upsample2d(a, US_LINEAR, out)')
-    t2 = timeit.timeit(setup=MAIN, number=times, stmt='nbimpl._upsample2d(a, US_LINEAR, out)')
-    print('%d\t%d\t%f\t%f\t%f' % (i + 1, s, t1, t2, t1 / t2))
+    t1 = timeit.timeit(setup=MAIN, number=times, stmt='rs._upsample2d(a, rs.US_LINEAR, 0., out)')
+    print('%d\t%d\t%f' % (i + 1, s, t1))
     s *= 2
 
 print('\nDownsampling:')
@@ -26,7 +23,6 @@ s = 4
 for i in range(N):
     a = np.random.rand(s, s)
     out = np.zeros((int(s / 2.5), int(s / 2.1)), dtype=np.float64)
-    t1 = timeit.timeit(setup=MAIN, number=times, stmt='pyimpl._downsample2d(a, DS_MEAN, out)')
-    t2 = timeit.timeit(setup=MAIN, number=times, stmt='nbimpl._downsample2d(a, DS_MEAN, out)')
-    print('%d\t%d\t%f\t%f\t%f' % (i + 1, s, t1, t2, t1 / t2))
+    t1 = timeit.timeit(setup=MAIN, number=times, stmt='rs._downsample2d(a, rs.DS_MEAN, 0., out)')
+    print('%d\t%d\t%f' % (i + 1, s, t1))
     s *= 2
