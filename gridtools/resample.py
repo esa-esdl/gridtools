@@ -26,6 +26,9 @@ DS_MEAN = 54
 #: with frequency given by contribution area.
 DS_MODE = 56
 
+#: Constant indicating an empty 2-D mask
+_NOMASK2D = np.ma.getmaskarray(np.ma.array([[0]], mask=[[0]]))
+
 _EPS = 1e-10
 
 
@@ -54,8 +57,9 @@ def resample2d(src, w, h, ds_method=DS_MEAN, us_method=US_LINEAR, fill_value=Non
     out = _get_out(out, src, (h, w))
     if out is None:
         return src
+    mask, use_mask = _get_mask(src)
     fill_value = _get_fill_value(fill_value, src, out)
-    return _resample2d(src, ds_method, us_method, fill_value, out)
+    return _resample2d(src, mask, use_mask, ds_method, us_method, fill_value, out)
 
 
 def upsample2d(src, w, h, method=US_LINEAR, fill_value=None, out=None):
@@ -81,8 +85,9 @@ def upsample2d(src, w, h, method=US_LINEAR, fill_value=None, out=None):
     out = _get_out(out, src, (h, w))
     if out is None:
         return src
+    mask, use_mask = _get_mask(src)
     fill_value = _get_fill_value(fill_value, src, out)
-    return _upsample2d(src, method, fill_value, out)
+    return _upsample2d(src, mask, use_mask, method, fill_value, out)
 
 
 def downsample2d(src, w, h, method=DS_MEAN, fill_value=None, out=None):
@@ -108,35 +113,9 @@ def downsample2d(src, w, h, method=DS_MEAN, fill_value=None, out=None):
     out = _get_out(out, src, (h, w))
     if out is None:
         return src
+    mask, use_mask = _get_mask(src)
     fill_value = _get_fill_value(fill_value, src, out)
-    return _downsample2d(src, method, fill_value, out)
-
-
-def _resample2d(src, ds_method, us_method, fill_value, out):
-    src_w = src.shape[-1]
-    src_h = src.shape[-2]
-    out_w = out.shape[-1]
-    out_h = out.shape[-2]
-
-    if out_w < src_w and out_h < src_h:
-        return _downsample2d(src, ds_method, fill_value, out)
-    elif out_w < src_w:
-        if out_h > src_h:
-            temp = np.zeros((src_h, out_w), dtype=src.dtype)
-            temp = _downsample2d(src, ds_method, fill_value, temp)
-            return _upsample2d(temp, us_method, fill_value, out)
-        else:
-            return _downsample2d(src, ds_method, fill_value, out)
-    elif out_h < src_h:
-        if out_w > src_w:
-            temp = np.zeros((out_h, src_w), dtype=src.dtype)
-            temp = _downsample2d(src, ds_method, fill_value, temp)
-            return _upsample2d(temp, us_method, fill_value, out)
-        else:
-            return _downsample2d(src, ds_method, fill_value, out)
-    elif out_w > src_w or out_h > src_h:
-        return _upsample2d(src, us_method, fill_value, out)
-    return src
+    return _downsample2d(src, mask, use_mask, method, fill_value, out)
 
 
 def _get_out(out, src, shape):
@@ -148,6 +127,14 @@ def _get_out(out, src, shape):
         if out.shape == src.shape:
             return None
         return out
+
+
+def _get_mask(src):
+    if isinstance(src, np.ma.MaskedArray):
+        mask = np.ma.getmask(src)
+        if mask is not np.ma.nomask:
+            return mask, True
+    return _NOMASK2D, False
 
 
 def _get_fill_value(fill_value, src, out):
@@ -162,7 +149,34 @@ def _get_fill_value(fill_value, src, out):
     return fill_value
 
 
-def _upsample2d(src, method, fill_value, out):
+def _resample2d(src, mask, use_mask, ds_method, us_method, fill_value, out):
+    src_w = src.shape[-1]
+    src_h = src.shape[-2]
+    out_w = out.shape[-1]
+    out_h = out.shape[-2]
+
+    if out_w < src_w and out_h < src_h:
+        return _downsample2d(src, mask, use_mask, ds_method, fill_value, out)
+    elif out_w < src_w:
+        if out_h > src_h:
+            temp = np.zeros((src_h, out_w), dtype=src.dtype)
+            temp = _downsample2d(src, mask, use_mask, ds_method, fill_value, temp)
+            return _upsample2d(temp, mask, use_mask, us_method, fill_value, out)
+        else:
+            return _downsample2d(src, mask, use_mask, ds_method, fill_value, out)
+    elif out_h < src_h:
+        if out_w > src_w:
+            temp = np.zeros((out_h, src_w), dtype=src.dtype)
+            temp = _downsample2d(src, mask, use_mask, ds_method, fill_value, temp)
+            return _upsample2d(temp, mask, use_mask, us_method, fill_value, out)
+        else:
+            return _downsample2d(src, mask, use_mask, ds_method, fill_value, out)
+    elif out_w > src_w or out_h > src_h:
+        return _upsample2d(src, mask, use_mask, us_method, fill_value, out)
+    return src
+
+
+def _upsample2d(src, mask, use_mask, method, fill_value, out):
     src_w = src.shape[-1]
     src_h = src.shape[-2]
     out_w = out.shape[-1]
@@ -178,12 +192,12 @@ def _upsample2d(src, method, fill_value, out):
         scale_x = src_w / out_w
         scale_y = src_h / out_h
         for out_y in range(out_h):
-            src_y = int(scale_y * (out_y))
+            src_y = int(scale_y * out_y)
             for out_x in range(out_w):
-                src_x = int(scale_x * (out_x))
-                v = src[src_y, src_x]
-                if np.isfinite(v):
-                    out[out_y, out_x] = v
+                src_x = int(scale_x * out_x)
+                value = src[src_y, src_x]
+                if np.isfinite(value) and not (use_mask and mask[src_y, src_x]):
+                    out[out_y, out_x] = value
                 else:
                     out[out_y, out_x] = fill_value
 
@@ -192,45 +206,55 @@ def _upsample2d(src, method, fill_value, out):
         scale_y = (src_h - 1.0) / ((out_h - 1.0) if out_h > 1 else 1.0)
         for out_y in range(out_h):
             src_yf = scale_y * out_y
-            src_y = int(src_yf)
-            wy = src_yf - src_y
-            within_src_h = src_y + 1 < src_h
+            src_y0 = int(src_yf)
+            wy = src_yf - src_y0
+            src_y1 = src_y0 + 1
+            if src_y1 >= src_h:
+                src_y1 = src_y0
             for out_x in range(out_w):
                 src_xf = scale_x * out_x
-                src_x = int(src_xf)
-                wx = src_xf - src_x
-                within_src_w = src_x + 1 < src_w
-                v00 = src[src_y, src_x]
-                v01 = src[src_y, src_x + 1] if within_src_w else v00
-                v10 = src[src_y + 1, src_x] if within_src_h else v00
-                v11 = src[src_y + 1, src_x + 1] if within_src_w and within_src_h else v00
-                v00_ok = np.isfinite(v00)
-                v01_ok = np.isfinite(v01)
-                v10_ok = np.isfinite(v10)
-                v11_ok = np.isfinite(v11)
+                src_x0 = int(src_xf)
+                wx = src_xf - src_x0
+                src_x1 = src_x0 + 1
+                if src_x1 >= src_w:
+                    src_x1 = src_x0
+                v00 = src[src_y0, src_x0]
+                v01 = src[src_y0, src_x1]
+                v10 = src[src_y1, src_x0]
+                v11 = src[src_y1, src_x1]
+                if use_mask:
+                    v00_ok = np.isfinite(v00) and not mask[src_y0, src_x0]
+                    v01_ok = np.isfinite(v01) and not mask[src_y0, src_x1]
+                    v10_ok = np.isfinite(v10) and not mask[src_y1, src_x0]
+                    v11_ok = np.isfinite(v11) and not mask[src_y1, src_x1]
+                else:
+                    v00_ok = np.isfinite(v00)
+                    v01_ok = np.isfinite(v01)
+                    v10_ok = np.isfinite(v10)
+                    v11_ok = np.isfinite(v11)
                 if v00_ok and v01_ok and v10_ok and v11_ok:
                     ok = True
                     v0 = v00 + wx * (v01 - v00)
                     v1 = v10 + wx * (v11 - v10)
-                    v = v0 + wy * (v1 - v0)
+                    value = v0 + wy * (v1 - v0)
                 elif wx < 0.5:
                     # NEAREST according to weight
                     if wy < 0.5:
                         ok = v00_ok
-                        v = v00
+                        value = v00
                     else:
                         ok = v10_ok
-                        v = v10
+                        value = v10
                 else:
                     # NEAREST according to weight
                     if wy < 0.5:
                         ok = v01_ok
-                        v = v01
+                        value = v01
                     else:
                         ok = v11_ok
-                        v = v11
+                        value = v11
                 if ok:
-                    out[out_y, out_x] = v
+                    out[out_y, out_x] = value
                 else:
                     out[out_y, out_x] = fill_value
 
@@ -240,7 +264,7 @@ def _upsample2d(src, method, fill_value, out):
     return out
 
 
-def _downsample2d(src, method, fill_value, out):
+def _downsample2d(src, mask, use_mask, method, fill_value, out):
     src_w = src.shape[-1]
     src_h = src.shape[-2]
     out_w = out.shape[-1]
@@ -275,7 +299,7 @@ def _downsample2d(src, method, fill_value, out):
                 for src_y in range(src_y0, src_y1 + 1):
                     for src_x in range(src_x0, src_x1 + 1):
                         v = src[src_y, src_x]
-                        if np.isfinite(v):
+                        if np.isfinite(v) and not (use_mask and mask[src_y, src_x]):
                             value = v
                             if method == DS_FIRST:
                                 done = True
@@ -285,11 +309,9 @@ def _downsample2d(src, method, fill_value, out):
                 out[out_y, out_x] = value
 
     elif method == DS_MODE:
-        nx = int(scale_x + 0.5)
-        ny = int(scale_y + 0.5)
-        n = nx * ny
-        val = np.zeros((n,), dtype=src.dtype)
-        freq = np.zeros((n,), dtype=np.uint32)
+        max_value_count = int(scale_x + 1) * int(scale_y + 1)
+        values = np.zeros((max_value_count,), dtype=src.dtype)
+        frequencies = np.zeros((max_value_count,), dtype=np.uint32)
         for out_y in range(out_h):
             src_yf0 = scale_y * out_y
             src_yf1 = src_yf0 + scale_y
@@ -312,31 +334,31 @@ def _downsample2d(src, method, fill_value, out):
                     wx1 = 1.0
                     if src_x1 > src_x0:
                         src_x1 -= 1
-                n = 0
+                value_count = 0
                 found = False
                 for src_y in range(src_y0, src_y1 + 1):
                     wy = wy0 if (src_y == src_y0) else wy1 if (src_y == src_y1) else 1.0
                     for src_x in range(src_x0, src_x1 + 1):
                         wx = wx0 if (src_x == src_x0) else wx1 if (src_x == src_x1) else 1.0
                         v = src[src_y, src_x]
-                        if np.isfinite(v):
+                        if np.isfinite(v) and not (use_mask and mask[src_y, src_x]):
                             w = wx * wy
-                            for i in range(n):
-                                if v == val[i]:
-                                    freq[i] += w
+                            for i in range(value_count):
+                                if v == values[i]:
+                                    frequencies[i] += w
                                     found = True
                             if not found:
-                                val[n] = v
-                                freq[n] = w
-                                n += 1
+                                values[value_count] = v
+                                frequencies[value_count] = w
+                                value_count += 1
                 w_max = -1.
-                v = fill_value
-                for i in range(n):
-                    w = freq[i]
+                value = fill_value
+                for i in range(value_count):
+                    w = frequencies[i]
                     if w > w_max:
                         w_max = w
-                        v = val[i]
-                out[out_y, out_x] = v
+                        value = values[i]
+                out[out_y, out_x] = value
 
     elif method == DS_MEAN:
         for out_y in range(out_h):
@@ -368,7 +390,7 @@ def _downsample2d(src, method, fill_value, out):
                     for src_x in range(src_x0, src_x1 + 1):
                         wx = wx0 if (src_x == src_x0) else wx1 if (src_x == src_x1) else 1.0
                         v = src[src_y, src_x]
-                        if np.isfinite(v):
+                        if np.isfinite(v) and not (use_mask and mask[src_y, src_x]):
                             w = wx * wy
                             v_sum += w * v
                             w_sum += w
@@ -387,6 +409,7 @@ if not NUMBA_DISABLED:
     try:
         import numba
 
+        _resample2d = numba.jit(_resample2d, nopython=True)
         _upsample2d = numba.jit(_upsample2d, nopython=True)
         _downsample2d = numba.jit(_downsample2d, nopython=True)
     except ImportError:

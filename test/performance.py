@@ -1,28 +1,29 @@
 import timeit
 
 import numpy as np
-import gridtools.resample as rs
 
-MAIN = 'from __main__ import np, rs, a, out'
+MAIN = 'from __main__ import np, rs, a, out, out_shape'
 times = 100
-N = 5
+N = 8
 
 print('\nUpsampling:')
 print('No\tSize\tPython\tNumba\tNumba-Gain')
-s = 4
+src_size = 4
 for i in range(N):
-    a = np.random.rand(s, s)
-    out = np.zeros((int(s * 2.5), int(s * 2.1)), dtype=np.float64)
-    t1 = timeit.timeit(setup=MAIN, number=times, stmt='rs._upsample2d(a, rs.US_LINEAR, 0., out)')
-    print('%d\t%d\t%f' % (i + 1, s, t1))
-    s *= 2
+    a = np.random.rand(src_size, src_size)
+    out_shape = int(src_size * 2.5), int(src_size * 2.1)
+    out = np.zeros(out_shape, dtype=np.float64)
+    t1 = timeit.timeit(setup=MAIN, number=times, stmt='rs.upsample2d(a, out_shape[-1], out_shape[-2], out=out)')
+    print('%d\t%d\t%f' % (i + 1, src_size, t1))
+    src_size *= 2
 
 print('\nDownsampling:')
 print('No\tSize\tPython\tNumba\tNumba-Gain')
-s = 4
+src_size = 4
 for i in range(N):
-    a = np.random.rand(s, s)
-    out = np.zeros((int(s / 2.5), int(s / 2.1)), dtype=np.float64)
-    t1 = timeit.timeit(setup=MAIN, number=times, stmt='rs._downsample2d(a, rs.DS_MEAN, 0., out)')
-    print('%d\t%d\t%f' % (i + 1, s, t1))
-    s *= 2
+    a = np.random.rand(src_size, src_size)
+    out_shape = int(src_size / 2.5), int(src_size / 2.1)
+    out = np.zeros(out_shape, dtype=np.float64)
+    t1 = timeit.timeit(setup=MAIN, number=times, stmt='rs.downsample2d(a, out_shape[-1], out_shape[-2], out=out)')
+    print('%d\t%d\t%f' % (i + 1, src_size, t1))
+    src_size *= 2

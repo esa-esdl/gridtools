@@ -8,5 +8,5 @@ setup(
     maintainer='Brockmann Consult GmbH',
     packages=['gridtools', 'gridtools.resample'],
     # *Minimum* requirements
-    install_requires=['numpy']
+    install_requires=['numpy', 'numba']
 )
