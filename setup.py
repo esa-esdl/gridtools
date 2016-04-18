@@ -6,7 +6,7 @@ setup(
     license='GPL 3',
     author='Norman Fomferra',
     maintainer='Brockmann Consult GmbH',
-    packages=['gridtools', 'gridtools.resample'],
+    packages=['gridtools'],
     # *Minimum* requirements
     install_requires=['numpy', 'numba']
 )
