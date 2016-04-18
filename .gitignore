@@ -59,8 +59,6 @@ target/
 # PyCharm / IDEA
 .idea
 
-# Ignored CAB-LAB (Data Cube) files
-*.nc
-cube.config
-cablab-config.py
+# Jupyter
+*-checkpoint.ipynb
 
