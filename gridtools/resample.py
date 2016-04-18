@@ -6,23 +6,51 @@ import warnings
 import numpy as np
 
 NUMBA_DISABLED = False
-#NUMBA_DISABLED = True
+# NUMBA_DISABLED = True
 
+#: Interpolation method for upsampling: Take nearest source grid cell, even if it is invalid.
 US_NEAREST = 10
+#: Interpolation method for upsampling: Bi-linear interpolation between the 4 nearest source grid cells.
 US_LINEAR = 11
 
+#: Aggregation method for downsampling: Take first valid source grid cell, ignore contribution areas.
 DS_FIRST = 50
+#: Aggregation method for downsampling: Take last valid source grid cell, ignore contribution areas.
 DS_LAST = 51
-DS_MIN = 52
-DS_MAX = 53
+# DS_MIN = 52
+# DS_MAX = 53
+#: Aggregation method for downsampling: Compute average of all valid source grid cells, weight by contribution area.
 DS_MEAN = 54
-DS_MEDIAN = 55
+# DS_MEDIAN = 55
+#: Aggregation method for downsampling: Compute most frequently seen valid source grid cell,
+#: with frequency given by contribution area.
 DS_MODE = 56
 
-EPS = 1e-10
+_EPS = 1e-10
 
 
 def resample2d(src, w, h, ds_method=DS_MEAN, us_method=US_LINEAR, fill_value=None, out=None):
+    """
+    Resample a 2-D grid to a new resolution.
+
+    :param src: 2-D *ndarray*
+    :param w: *int*
+    New grid width
+    :param h:  *int*
+    New grid height
+    :param ds_method: one of the *DS_* constants, optional
+    Grid cell aggregation method for a possible downsampling
+    :param us_method: one of the *US_* constants, optional
+    Grid cell interpolation method for a possible upsampling
+    :param fill_value: *scalar*, optional
+    If ``None``, it is taken from **src** if it is a masked array,
+    otherwise from *out* if it is a masked array,
+    otherwise numpy's default value is used.
+    :param out: 2-D *ndarray*, optional
+    Alternate output array in which to place the result. The default is *None*; if provided, it must have the same
+    shape as the expected output.
+    :return: An resampled version of the *src* array.
+    """
     out = _get_out(out, src, (h, w))
     if out is None:
         return src
@@ -31,6 +59,25 @@ def resample2d(src, w, h, ds_method=DS_MEAN, us_method=US_LINEAR, fill_value=Non
 
 
 def upsample2d(src, w, h, method=US_LINEAR, fill_value=None, out=None):
+    """
+    Upsample a 2-D grid to a higher resolution by interpolating original grid cells.
+
+    :param src: 2-D *ndarray*
+    :param w: *int*
+    Grid width, which must be greater than or equal to *src.shape[-1]*
+    :param h:  *int*
+    Grid height, which must be greater than or equal to *src.shape[-2]*
+    :param method: one of the *US_* constants, optional
+    Grid cell interpolation method
+    :param fill_value: *scalar*, optional
+    If ``None``, it is taken from **src** if it is a masked array,
+    otherwise from *out* if it is a masked array,
+    otherwise numpy's default value is used.
+    :param out: 2-D *ndarray*, optional
+    Alternate output array in which to place the result. The default is *None*; if provided, it must have the same
+    shape as the expected output.
+    :return: An upsampled version of the *src* array.
+    """
     out = _get_out(out, src, (h, w))
     if out is None:
         return src
@@ -39,6 +86,25 @@ def upsample2d(src, w, h, method=US_LINEAR, fill_value=None, out=None):
 
 
 def downsample2d(src, w, h, method=DS_MEAN, fill_value=None, out=None):
+    """
+    Downsample a 2-D grid to a lower resolution by aggregating original grid cells.
+
+    :param src: 2-D *ndarray*
+    :param w: *int*
+    Grid width, which must be less than or equal to *src.shape[-1]*
+    :param h:  *int*
+    Grid height, which must be less than or equal to *src.shape[-2]*
+    :param method: one of the *DS_* constants, optional
+    Grid cell aggregation method
+    :param fill_value: *scalar*, optional
+    If ``None``, it is taken from **src** if it is a masked array,
+    otherwise from *out* if it is a masked array,
+    otherwise numpy's default value is used.
+    :param out: 2-D *ndarray*, optional
+    Alternate output array in which to place the result. The default is *None*; if provided, it must have the same
+    shape as the expected output.
+    :return: A downsampled version of the *src* array.
+    """
     out = _get_out(out, src, (h, w))
     if out is None:
         return src
@@ -202,7 +268,7 @@ def _downsample2d(src, method, fill_value, out):
             src_y1 = int(src_yf1)
             wy0 = 1.0 - (src_yf0 - src_y0)
             wy1 = src_yf1 - src_y1
-            if wy1 < EPS:
+            if wy1 < _EPS:
                 wy1 = 1.0
                 if src_y1 > src_y0:
                     src_y1 -= 1
@@ -213,7 +279,7 @@ def _downsample2d(src, method, fill_value, out):
                 src_x1 = int(src_xf1)
                 wx0 = 1.0 - (src_xf0 - src_x0)
                 wx1 = src_xf1 - src_x1
-                if wx1 < EPS:
+                if wx1 < _EPS:
                     wx1 = 1.0
                     if src_x1 > src_x0:
                         src_x1 -= 1
@@ -251,7 +317,7 @@ def _downsample2d(src, method, fill_value, out):
             src_y1 = int(src_yf1)
             wy0 = 1.0 - (src_yf0 - src_y0)
             wy1 = src_yf1 - src_y1
-            if wy1 < EPS:
+            if wy1 < _EPS:
                 wy1 = 1.0
                 if src_y1 > src_y0:
                     src_y1 -= 1
@@ -262,7 +328,7 @@ def _downsample2d(src, method, fill_value, out):
                 src_x1 = int(src_xf1)
                 wx0 = 1.0 - (src_xf0 - src_x0)
                 wx1 = src_xf1 - src_x1
-                if wx1 < EPS:
+                if wx1 < _EPS:
                     wx1 = 1.0
                     if src_x1 > src_x0:
                         src_x1 -= 1
@@ -277,7 +343,7 @@ def _downsample2d(src, method, fill_value, out):
                             w = wx * wy
                             v_sum += w * v
                             w_sum += w
-                if w_sum < EPS:
+                if w_sum < _EPS:
                     out[out_y, out_x] = fill_value
                 else:
                     out[out_y, out_x] = v_sum / w_sum
