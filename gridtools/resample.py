@@ -181,7 +181,11 @@ def _upsample2d(src, method, fill_value, out):
             src_y = int(scale_y * (out_y))
             for out_x in range(out_w):
                 src_x = int(scale_x * (out_x))
-                out[out_y, out_x] = src[src_y, src_x]
+                v = src[src_y, src_x]
+                if np.isfinite(v):
+                    out[out_y, out_x] = v
+                else:
+                    out[out_y, out_x] = fill_value
 
     elif method == US_LINEAR:
         scale_x = (src_w - 1.0) / ((out_w - 1.0) if out_w > 1 else 1.0)
@@ -200,10 +204,35 @@ def _upsample2d(src, method, fill_value, out):
                 v01 = src[src_y, src_x + 1] if within_src_w else v00
                 v10 = src[src_y + 1, src_x] if within_src_h else v00
                 v11 = src[src_y + 1, src_x + 1] if within_src_w and within_src_h else v00
-                v0 = v00 + wx * (v01 - v00)
-                v1 = v10 + wx * (v11 - v10)
-                v = v0 + wy * (v1 - v0)
-                out[out_y, out_x] = v
+                v00_ok = np.isfinite(v00)
+                v01_ok = np.isfinite(v01)
+                v10_ok = np.isfinite(v10)
+                v11_ok = np.isfinite(v11)
+                if v00_ok and v01_ok and v10_ok and v11_ok:
+                    ok = True
+                    v0 = v00 + wx * (v01 - v00)
+                    v1 = v10 + wx * (v11 - v10)
+                    v = v0 + wy * (v1 - v0)
+                elif wx < 0.5:
+                    # NEAREST according to weight
+                    if wy < 0.5:
+                        ok = v00_ok
+                        v = v00
+                    else:
+                        ok = v10_ok
+                        v = v10
+                else:
+                    # NEAREST according to weight
+                    if wy < 0.5:
+                        ok = v01_ok
+                        v = v01
+                    else:
+                        ok = v11_ok
+                        v = v11
+                if ok:
+                    out[out_y, out_x] = v
+                else:
+                    out[out_y, out_x] = fill_value
 
     else:
         raise ValueError('invalid upsampling method')
