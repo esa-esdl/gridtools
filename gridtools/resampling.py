@@ -59,7 +59,7 @@ def resample2d(src, w, h, ds_method=DS_MEAN, us_method=US_LINEAR, fill_value=Non
         return src
     mask, use_mask = _get_mask(src)
     fill_value = _get_fill_value(fill_value, src, out)
-    return _resample2d(src, mask, use_mask, ds_method, us_method, fill_value, out)
+    return _mask_or_not(_resample2d(src, mask, use_mask, ds_method, us_method, fill_value, out), src, fill_value)
 
 
 def upsample2d(src, w, h, method=US_LINEAR, fill_value=None, out=None):
@@ -87,7 +87,7 @@ def upsample2d(src, w, h, method=US_LINEAR, fill_value=None, out=None):
         return src
     mask, use_mask = _get_mask(src)
     fill_value = _get_fill_value(fill_value, src, out)
-    return _upsample2d(src, mask, use_mask, method, fill_value, out)
+    return _mask_or_not(_upsample2d(src, mask, use_mask, method, fill_value, out), src, fill_value)
 
 
 def downsample2d(src, w, h, method=DS_MEAN, fill_value=None, out=None):
@@ -115,7 +115,7 @@ def downsample2d(src, w, h, method=DS_MEAN, fill_value=None, out=None):
         return src
     mask, use_mask = _get_mask(src)
     fill_value = _get_fill_value(fill_value, src, out)
-    return _downsample2d(src, mask, use_mask, method, fill_value, out)
+    return _mask_or_not(_downsample2d(src, mask, use_mask, method, fill_value, out), src, fill_value)
 
 
 def _get_out(out, src, shape):
@@ -135,6 +135,18 @@ def _get_mask(src):
         if mask is not np.ma.nomask:
             return mask, True
     return _NOMASK2D, False
+
+
+def _mask_or_not(out, src, fill_value):
+    if isinstance(src, np.ma.MaskedArray):
+        if not isinstance(out, np.ma.MaskedArray):
+            if np.isfinite(fill_value):
+                masked = np.ma.masked_equal(out, fill_value, copy=False)
+            else:
+                masked = np.ma.masked_invalid(out, copy=False)
+            masked.set_fill_value(fill_value)
+            return masked
+    return out
 
 
 def _get_fill_value(fill_value, src, out):
