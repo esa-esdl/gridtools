@@ -161,6 +161,10 @@ def _get_fill_value(fill_value, src, out):
     return fill_value
 
 
+# This function will be JIT-compiled by Numba with nopython=True,
+# therefore all arg types must be either primitive scalars or numpy arrays.
+# Key-value args are not allowed.
+#
 def _resample2d(src, mask, use_mask, ds_method, us_method, fill_value, out):
     src_w = src.shape[-1]
     src_h = src.shape[-2]
@@ -173,6 +177,7 @@ def _resample2d(src, mask, use_mask, ds_method, us_method, fill_value, out):
         if out_h > src_h:
             temp = np.zeros((src_h, out_w), dtype=src.dtype)
             temp = _downsample2d(src, mask, use_mask, ds_method, fill_value, temp)
+            # todo - write test & fix: must use mask=np.ma.getmaskarray(temp) here if use_mask==True
             return _upsample2d(temp, mask, use_mask, us_method, fill_value, out)
         else:
             return _downsample2d(src, mask, use_mask, ds_method, fill_value, out)
@@ -180,6 +185,7 @@ def _resample2d(src, mask, use_mask, ds_method, us_method, fill_value, out):
         if out_w > src_w:
             temp = np.zeros((out_h, src_w), dtype=src.dtype)
             temp = _downsample2d(src, mask, use_mask, ds_method, fill_value, temp)
+            # todo - write test & fix: must use mask=np.ma.getmaskarray(temp) here if use_mask==True
             return _upsample2d(temp, mask, use_mask, us_method, fill_value, out)
         else:
             return _downsample2d(src, mask, use_mask, ds_method, fill_value, out)
@@ -187,7 +193,10 @@ def _resample2d(src, mask, use_mask, ds_method, us_method, fill_value, out):
         return _upsample2d(src, mask, use_mask, us_method, fill_value, out)
     return src
 
-
+# This function will be JIT-compiled by Numba with nopython=True,
+# therefore all arg types must be either primitive scalars or numpy arrays.
+# Key-value args are not allowed.
+#
 def _upsample2d(src, mask, use_mask, method, fill_value, out):
     src_w = src.shape[-1]
     src_h = src.shape[-2]
@@ -276,6 +285,10 @@ def _upsample2d(src, mask, use_mask, method, fill_value, out):
     return out
 
 
+# This function will be JIT-compiled by Numba with nopython=True,
+# therefore all arg types must be either primitive scalars or numpy arrays.
+# Key-value args are not allowed.
+#
 def _downsample2d(src, mask, use_mask, method, fill_value, out):
     src_w = src.shape[-1]
     src_h = src.shape[-2]
