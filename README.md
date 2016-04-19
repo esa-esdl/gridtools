@@ -1,3 +1,5 @@
+[![Build Status](https://travis-ci.org/CAB-LAB/gridtools.svg?branch=master)](https://travis-ci.org/CAB-LAB/gridtools)
+
 # gridtools - Python tools for numeric grids
 
 While there exists a number of Python functions that upsample numeric images and grids
@@ -27,7 +29,7 @@ source grid cells for a given target grid cell:
 
 ## Use of Numba
 
-gridtools optionally uses **numba** to JIT-compile the resampling functions.
+gridtools optionally uses [Numba](http://numba.pydata.org/) to JIT-compile the resampling functions.
 Although the use of numba is optional, it is strongly recommended to install it
 (e.g. using Miniconda) as it speeds up computations by up to a several hundred
 times (!) compared to plain Python.
