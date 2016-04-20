@@ -20,9 +20,6 @@ SRC = [[0.9, 0.5, 3.0, 4.0],
 
 
 class Resample2dTest(unittest.TestCase):
-    """
-    Note: Always align this test with java/src/test/java/com/bc/perfcomp/gridtools/ResizerTest.java
-    """
 
     def test_no_op(self):
         _test_resample2d(SRC,
