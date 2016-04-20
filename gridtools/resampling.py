@@ -1,12 +1,10 @@
 # http://stackoverflow.com/questions/7075082/what-is-future-in-python-used-for-and-how-when-to-use-it-and-how-it-works
 from __future__ import division
 
-import warnings
-
 import numpy as np
+from numba import jit
 
-NUMBA_DISABLED = False
-# NUMBA_DISABLED = True
+from ._util import jitify
 
 #: Interpolation method for upsampling: Take nearest source grid cell, even if it is invalid.
 US_NEAREST = 10
@@ -165,6 +163,7 @@ def _get_fill_value(fill_value, src, out):
 # therefore all arg types must be either primitive scalars or numpy arrays.
 # Key-value args are not allowed.
 #
+@jit(nopython=True)
 def _resample2d(src, mask, use_mask, ds_method, us_method, fill_value, out):
     src_w = src.shape[-1]
     src_h = src.shape[-2]
@@ -193,10 +192,12 @@ def _resample2d(src, mask, use_mask, ds_method, us_method, fill_value, out):
         return _upsample2d(src, mask, use_mask, us_method, fill_value, out)
     return src
 
+
 # This function will be JIT-compiled by Numba with nopython=True,
 # therefore all arg types must be either primitive scalars or numpy arrays.
 # Key-value args are not allowed.
 #
+@jit(nopython=True)
 def _upsample2d(src, mask, use_mask, method, fill_value, out):
     src_w = src.shape[-1]
     src_h = src.shape[-2]
@@ -289,6 +290,7 @@ def _upsample2d(src, mask, use_mask, method, fill_value, out):
 # therefore all arg types must be either primitive scalars or numpy arrays.
 # Key-value args are not allowed.
 #
+@jit(nopython=True)
 def _downsample2d(src, mask, use_mask, method, fill_value, out):
     src_w = src.shape[-1]
     src_h = src.shape[-2]
@@ -429,15 +431,10 @@ def _downsample2d(src, mask, use_mask, method, fill_value, out):
 
     return out
 
-
-if not NUMBA_DISABLED:
-    try:
-        import numba
-
-        _resample2d = numba.jit(_resample2d, nopython=True)
-        _upsample2d = numba.jit(_upsample2d, nopython=True)
-        _downsample2d = numba.jit(_downsample2d, nopython=True)
-    except ImportError:
-        warnings.warn('numba not installed, using pure Python implementation')
-else:
-    warnings.warn('numba disabled, using pure Python implementation')
+#
+# _resample2d, \
+# _upsample2d, \
+# _downsample2d = \
+#     jitify(_resample2d,
+#            _upsample2d,
+#            _downsample2d)
