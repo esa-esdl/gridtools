@@ -4,8 +4,6 @@ from __future__ import division
 import numpy as np
 from numba import jit
 
-from ._util import jitify
-
 #: Interpolation method for upsampling: Take nearest source grid cell, even if it is invalid.
 US_NEAREST = 10
 #: Interpolation method for upsampling: Bi-linear interpolation between the 4 nearest source grid cells.
@@ -430,11 +428,3 @@ def _downsample2d(src, mask, use_mask, method, fill_value, out):
         raise ValueError('invalid upsampling method')
 
     return out
-
-#
-# _resample2d, \
-# _upsample2d, \
-# _downsample2d = \
-#     jitify(_resample2d,
-#            _upsample2d,
-#            _downsample2d)
