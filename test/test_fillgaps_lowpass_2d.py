@@ -7,11 +7,16 @@ import gridtools.gapfilling as gtg
 
 GAP = np.nan
 
+KERNEL = np.ones((3, 3), dtype=np.float64)
 
-class Fillgaps2dWithMeanOfNearestTest(unittest.TestCase):
+
+class FillgapsLowpass2d(unittest.TestCase):
     def _test_fillgaps(self, src, desired_out, desired_gaps_filled):
         src = np.array(src)
-        actual_out, actual_gaps_filled = gtg.fillgaps2d(src, method=gtg.GF_MEAN_OF_NEAREST)
+        gc1 = gtg.count_gaps(src)
+        actual_out = gtg.fillgaps_lowpass_2d(src, kernel=KERNEL)
+        gc2 = gtg.count_gaps(actual_out)
+        actual_gaps_filled = gc1 - gc2
         assert_almost_equal(actual_out, np.array(desired_out))
         self.assertEqual(actual_gaps_filled, desired_gaps_filled)
 
