@@ -28,7 +28,7 @@ _NOMASK2D = np.ma.getmaskarray(np.ma.array([[0]], mask=[[0]]))
 _EPS = 1e-10
 
 
-def resample2d(src, w, h, ds_method=DS_MEAN, us_method=US_LINEAR, fill_value=None, out=None):
+def resample_2d(src, w, h, ds_method=DS_MEAN, us_method=US_LINEAR, fill_value=None, out=None):
     """
     Resample a 2-D grid to a new resolution.
 
@@ -55,10 +55,10 @@ def resample2d(src, w, h, ds_method=DS_MEAN, us_method=US_LINEAR, fill_value=Non
         return src
     mask, use_mask = _get_mask(src)
     fill_value = _get_fill_value(fill_value, src, out)
-    return _mask_or_not(_resample2d(src, mask, use_mask, ds_method, us_method, fill_value, out), src, fill_value)
+    return _mask_or_not(_resample_2d(src, mask, use_mask, ds_method, us_method, fill_value, out), src, fill_value)
 
 
-def upsample2d(src, w, h, method=US_LINEAR, fill_value=None, out=None):
+def upsample_2d(src, w, h, method=US_LINEAR, fill_value=None, out=None):
     """
     Upsample a 2-D grid to a higher resolution by interpolating original grid cells.
 
@@ -83,10 +83,10 @@ def upsample2d(src, w, h, method=US_LINEAR, fill_value=None, out=None):
         return src
     mask, use_mask = _get_mask(src)
     fill_value = _get_fill_value(fill_value, src, out)
-    return _mask_or_not(_upsample2d(src, mask, use_mask, method, fill_value, out), src, fill_value)
+    return _mask_or_not(_upsample_2d(src, mask, use_mask, method, fill_value, out), src, fill_value)
 
 
-def downsample2d(src, w, h, method=DS_MEAN, fill_value=None, out=None):
+def downsample_2d(src, w, h, method=DS_MEAN, fill_value=None, out=None):
     """
     Downsample a 2-D grid to a lower resolution by aggregating original grid cells.
 
@@ -111,7 +111,7 @@ def downsample2d(src, w, h, method=DS_MEAN, fill_value=None, out=None):
         return src
     mask, use_mask = _get_mask(src)
     fill_value = _get_fill_value(fill_value, src, out)
-    return _mask_or_not(_downsample2d(src, mask, use_mask, method, fill_value, out), src, fill_value)
+    return _mask_or_not(_downsample_2d(src, mask, use_mask, method, fill_value, out), src, fill_value)
 
 
 def _get_out(out, src, shape):
@@ -162,32 +162,32 @@ def _get_fill_value(fill_value, src, out):
 # Key-value args are not allowed.
 #
 @jit(nopython=True)
-def _resample2d(src, mask, use_mask, ds_method, us_method, fill_value, out):
+def _resample_2d(src, mask, use_mask, ds_method, us_method, fill_value, out):
     src_w = src.shape[-1]
     src_h = src.shape[-2]
     out_w = out.shape[-1]
     out_h = out.shape[-2]
 
     if out_w < src_w and out_h < src_h:
-        return _downsample2d(src, mask, use_mask, ds_method, fill_value, out)
+        return _downsample_2d(src, mask, use_mask, ds_method, fill_value, out)
     elif out_w < src_w:
         if out_h > src_h:
             temp = np.zeros((src_h, out_w), dtype=src.dtype)
-            temp = _downsample2d(src, mask, use_mask, ds_method, fill_value, temp)
+            temp = _downsample_2d(src, mask, use_mask, ds_method, fill_value, temp)
             # todo - write test & fix: must use mask=np.ma.getmaskarray(temp) here if use_mask==True
-            return _upsample2d(temp, mask, use_mask, us_method, fill_value, out)
+            return _upsample_2d(temp, mask, use_mask, us_method, fill_value, out)
         else:
-            return _downsample2d(src, mask, use_mask, ds_method, fill_value, out)
+            return _downsample_2d(src, mask, use_mask, ds_method, fill_value, out)
     elif out_h < src_h:
         if out_w > src_w:
             temp = np.zeros((out_h, src_w), dtype=src.dtype)
-            temp = _downsample2d(src, mask, use_mask, ds_method, fill_value, temp)
+            temp = _downsample_2d(src, mask, use_mask, ds_method, fill_value, temp)
             # todo - write test & fix: must use mask=np.ma.getmaskarray(temp) here if use_mask==True
-            return _upsample2d(temp, mask, use_mask, us_method, fill_value, out)
+            return _upsample_2d(temp, mask, use_mask, us_method, fill_value, out)
         else:
-            return _downsample2d(src, mask, use_mask, ds_method, fill_value, out)
+            return _downsample_2d(src, mask, use_mask, ds_method, fill_value, out)
     elif out_w > src_w or out_h > src_h:
-        return _upsample2d(src, mask, use_mask, us_method, fill_value, out)
+        return _upsample_2d(src, mask, use_mask, us_method, fill_value, out)
     return src
 
 
@@ -196,7 +196,7 @@ def _resample2d(src, mask, use_mask, ds_method, us_method, fill_value, out):
 # Key-value args are not allowed.
 #
 @jit(nopython=True)
-def _upsample2d(src, mask, use_mask, method, fill_value, out):
+def _upsample_2d(src, mask, use_mask, method, fill_value, out):
     src_w = src.shape[-1]
     src_h = src.shape[-2]
     out_w = out.shape[-1]
@@ -289,7 +289,7 @@ def _upsample2d(src, mask, use_mask, method, fill_value, out):
 # Key-value args are not allowed.
 #
 @jit(nopython=True)
-def _downsample2d(src, mask, use_mask, method, fill_value, out):
+def _downsample_2d(src, mask, use_mask, method, fill_value, out):
     src_w = src.shape[-1]
     src_h = src.shape[-2]
     out_w = out.shape[-1]
