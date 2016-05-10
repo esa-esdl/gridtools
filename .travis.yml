@@ -26,7 +26,7 @@ install:
 
 script:
   - export NUMBA_DISABLE_JIT=1
-  - py.test --cov=. test
+  - py.test -v --cov=gridtools test/
 
 after_success:
   - pip install codecov
