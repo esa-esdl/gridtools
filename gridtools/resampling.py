@@ -28,26 +28,29 @@ _NOMASK2D = np.ma.getmaskarray(np.ma.array([[0]], mask=[[0]]))
 _EPS = 1e-10
 
 
-def resample_2d(src, w, h, ds_method=DS_MEAN, us_method=US_LINEAR, fill_value=None, out=None):
+def resample_2d(src, w, h, ds_method=DS_MEAN, us_method=US_LINEAR, fill_value=None, mode_rank=1, out=None):
     """
     Resample a 2-D grid to a new resolution.
 
     :param src: 2-D *ndarray*
     :param w: *int*
-    New grid width
+        New grid width
     :param h:  *int*
-    New grid height
+        New grid height
     :param ds_method: one of the *DS_* constants, optional
-    Grid cell aggregation method for a possible downsampling
+        Grid cell aggregation method for a possible downsampling
     :param us_method: one of the *US_* constants, optional
-    Grid cell interpolation method for a possible upsampling
+        Grid cell interpolation method for a possible upsampling
     :param fill_value: *scalar*, optional
-    If ``None``, it is taken from **src** if it is a masked array,
-    otherwise from *out* if it is a masked array,
-    otherwise numpy's default value is used.
+        If ``None``, it is taken from **src** if it is a masked array,
+        otherwise from *out* if it is a masked array,
+        otherwise numpy's default value is used.
+    :param mode_rank: *scalar*, optional
+        The rank of the frequency determined by the *ds_method* ``DS_MODE``. One (the default) means
+        most frequent value, zwo means second most frequent value, and so forth.
     :param out: 2-D *ndarray*, optional
-    Alternate output array in which to place the result. The default is *None*; if provided, it must have the same
-    shape as the expected output.
+        Alternate output array in which to place the result. The default is *None*; if provided, it must have the same
+        shape as the expected output.
     :return: An resampled version of the *src* array.
     """
     out = _get_out(out, src, (h, w))
@@ -55,7 +58,7 @@ def resample_2d(src, w, h, ds_method=DS_MEAN, us_method=US_LINEAR, fill_value=No
         return src
     mask, use_mask = _get_mask(src)
     fill_value = _get_fill_value(fill_value, src, out)
-    return _mask_or_not(_resample_2d(src, mask, use_mask, ds_method, us_method, fill_value, out), src, fill_value)
+    return _mask_or_not(_resample_2d(src, mask, use_mask, ds_method, us_method, fill_value, mode_rank, out), src, fill_value)
 
 
 def upsample_2d(src, w, h, method=US_LINEAR, fill_value=None, out=None):
@@ -64,18 +67,18 @@ def upsample_2d(src, w, h, method=US_LINEAR, fill_value=None, out=None):
 
     :param src: 2-D *ndarray*
     :param w: *int*
-    Grid width, which must be greater than or equal to *src.shape[-1]*
+        Grid width, which must be greater than or equal to *src.shape[-1]*
     :param h:  *int*
-    Grid height, which must be greater than or equal to *src.shape[-2]*
+        Grid height, which must be greater than or equal to *src.shape[-2]*
     :param method: one of the *US_* constants, optional
-    Grid cell interpolation method
+        Grid cell interpolation method
     :param fill_value: *scalar*, optional
-    If ``None``, it is taken from **src** if it is a masked array,
-    otherwise from *out* if it is a masked array,
-    otherwise numpy's default value is used.
+        If ``None``, it is taken from **src** if it is a masked array,
+        otherwise from *out* if it is a masked array,
+        otherwise numpy's default value is used.
     :param out: 2-D *ndarray*, optional
-    Alternate output array in which to place the result. The default is *None*; if provided, it must have the same
-    shape as the expected output.
+        Alternate output array in which to place the result. The default is *None*; if provided, it must have the same
+        shape as the expected output.
     :return: An upsampled version of the *src* array.
     """
     out = _get_out(out, src, (h, w))
@@ -86,24 +89,27 @@ def upsample_2d(src, w, h, method=US_LINEAR, fill_value=None, out=None):
     return _mask_or_not(_upsample_2d(src, mask, use_mask, method, fill_value, out), src, fill_value)
 
 
-def downsample_2d(src, w, h, method=DS_MEAN, fill_value=None, out=None):
+def downsample_2d(src, w, h, method=DS_MEAN, fill_value=None, mode_rank=1, out=None):
     """
     Downsample a 2-D grid to a lower resolution by aggregating original grid cells.
 
     :param src: 2-D *ndarray*
     :param w: *int*
-    Grid width, which must be less than or equal to *src.shape[-1]*
+        Grid width, which must be less than or equal to *src.shape[-1]*
     :param h:  *int*
-    Grid height, which must be less than or equal to *src.shape[-2]*
+        Grid height, which must be less than or equal to *src.shape[-2]*
     :param method: one of the *DS_* constants, optional
-    Grid cell aggregation method
+        Grid cell aggregation method
     :param fill_value: *scalar*, optional
-    If ``None``, it is taken from **src** if it is a masked array,
-    otherwise from *out* if it is a masked array,
-    otherwise numpy's default value is used.
+        If ``None``, it is taken from **src** if it is a masked array,
+        otherwise from *out* if it is a masked array,
+        otherwise numpy's default value is used.
+    :param mode_rank: *scalar*, optional
+        The rank of the frequency determined by the *method* ``DS_MODE``. One (the default) means
+        most frequent value, zwo means second most frequent value, and so forth.
     :param out: 2-D *ndarray*, optional
-    Alternate output array in which to place the result. The default is *None*; if provided, it must have the same
-    shape as the expected output.
+        Alternate output array in which to place the result. The default is *None*; if provided, it must have the same
+        shape as the expected output.
     :return: A downsampled version of the *src* array.
     """
     out = _get_out(out, src, (h, w))
@@ -111,7 +117,7 @@ def downsample_2d(src, w, h, method=DS_MEAN, fill_value=None, out=None):
         return src
     mask, use_mask = _get_mask(src)
     fill_value = _get_fill_value(fill_value, src, out)
-    return _mask_or_not(_downsample_2d(src, mask, use_mask, method, fill_value, out), src, fill_value)
+    return _mask_or_not(_downsample_2d(src, mask, use_mask, method, fill_value, mode_rank, out), src, fill_value)
 
 
 def _get_out(out, src, shape):
@@ -162,30 +168,30 @@ def _get_fill_value(fill_value, src, out):
 # Key-value args are not allowed.
 #
 @jit(nopython=True)
-def _resample_2d(src, mask, use_mask, ds_method, us_method, fill_value, out):
+def _resample_2d(src, mask, use_mask, ds_method, us_method, fill_value, mode_rank, out):
     src_w = src.shape[-1]
     src_h = src.shape[-2]
     out_w = out.shape[-1]
     out_h = out.shape[-2]
 
     if out_w < src_w and out_h < src_h:
-        return _downsample_2d(src, mask, use_mask, ds_method, fill_value, out)
+        return _downsample_2d(src, mask, use_mask, ds_method, fill_value, mode_rank, out)
     elif out_w < src_w:
         if out_h > src_h:
             temp = np.zeros((src_h, out_w), dtype=src.dtype)
-            temp = _downsample_2d(src, mask, use_mask, ds_method, fill_value, temp)
+            temp = _downsample_2d(src, mask, use_mask, ds_method, fill_value, mode_rank, temp)
             # todo - write test & fix: must use mask=np.ma.getmaskarray(temp) here if use_mask==True
             return _upsample_2d(temp, mask, use_mask, us_method, fill_value, out)
         else:
-            return _downsample_2d(src, mask, use_mask, ds_method, fill_value, out)
+            return _downsample_2d(src, mask, use_mask, ds_method, fill_value, mode_rank, out)
     elif out_h < src_h:
         if out_w > src_w:
             temp = np.zeros((out_h, src_w), dtype=src.dtype)
-            temp = _downsample_2d(src, mask, use_mask, ds_method, fill_value, temp)
+            temp = _downsample_2d(src, mask, use_mask, ds_method, fill_value, mode_rank, temp)
             # todo - write test & fix: must use mask=np.ma.getmaskarray(temp) here if use_mask==True
             return _upsample_2d(temp, mask, use_mask, us_method, fill_value, out)
         else:
-            return _downsample_2d(src, mask, use_mask, ds_method, fill_value, out)
+            return _downsample_2d(src, mask, use_mask, ds_method, fill_value, mode_rank, out)
     elif out_w > src_w or out_h > src_h:
         return _upsample_2d(src, mask, use_mask, us_method, fill_value, out)
     return src
@@ -289,7 +295,7 @@ def _upsample_2d(src, mask, use_mask, method, fill_value, out):
 # Key-value args are not allowed.
 #
 @jit(nopython=True)
-def _downsample_2d(src, mask, use_mask, method, fill_value, out):
+def _downsample_2d(src, mask, use_mask:bool, method, fill_value, mode_rank:int, out):
     src_w = src.shape[-1]
     src_h = src.shape[-2]
     out_w = out.shape[-1]
@@ -360,7 +366,6 @@ def _downsample_2d(src, mask, use_mask, method, fill_value, out):
                     if src_x1 > src_x0:
                         src_x1 -= 1
                 value_count = 0
-                found = False
                 for src_y in range(src_y0, src_y1 + 1):
                     wy = wy0 if (src_y == src_y0) else wy1 if (src_y == src_y1) else 1.0
                     for src_x in range(src_x0, src_x1 + 1):
@@ -368,21 +373,36 @@ def _downsample_2d(src, mask, use_mask, method, fill_value, out):
                         v = src[src_y, src_x]
                         if np.isfinite(v) and not (use_mask and mask[src_y, src_x]):
                             w = wx * wy
+                            found = False
                             for i in range(value_count):
                                 if v == values[i]:
                                     frequencies[i] += w
                                     found = True
+                                    break
                             if not found:
                                 values[value_count] = v
                                 frequencies[value_count] = w
                                 value_count += 1
                 w_max = -1.
                 value = fill_value
-                for i in range(value_count):
-                    w = frequencies[i]
-                    if w > w_max:
-                        w_max = w
-                        value = values[i]
+                if mode_rank == 1:
+                    for i in range(value_count):
+                        w = frequencies[i]
+                        if w > w_max:
+                            w_max = w
+                            value = values[i]
+                elif 1 < mode_rank < max_value_count:
+                    max_frequencies = np.full(mode_rank, -1.0, dtype=np.float64)
+                    indices = np.zeros(mode_rank, dtype=np.int64)
+                    for i in range(value_count):
+                        w = frequencies[i]
+                        for j in range(mode_rank):
+                            if w > max_frequencies[j]:
+                                max_frequencies[j] = w
+                                indices[j] = i
+                                break
+                    value = values[indices[mode_rank - 1]]
+
                 out[out_y, out_x] = value
 
     elif method == DS_MEAN:
