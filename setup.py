@@ -5,10 +5,10 @@ def get_version():
     version_file = 'gridtools/version.py'
     locals = {}
     try:
-        execfile(version_file, None, locals)
+        execfile(version_file, globals(), locals)
     except NameError:
         with open(version_file) as fp:
-            exec(fp.read(), None, locals)
+            exec(fp.read(), globals(), locals)
     return locals.get('version', '0.0.0')
 
 
