@@ -112,6 +112,8 @@ def downsample_2d(src, w, h, method=DS_MEAN, fill_value=None, mode_rank=1, out=N
         shape as the expected output.
     :return: A downsampled version of the *src* array.
     """
+    if method == DS_MODE and mode_rank < 1:
+        raise ValueError('mode_rank must be >= 1')
     out = _get_out(out, src, (h, w))
     if out is None:
         return src
@@ -295,7 +297,7 @@ def _upsample_2d(src, mask, use_mask, method, fill_value, out):
 # Key-value args are not allowed.
 #
 @jit(nopython=True)
-def _downsample_2d(src, mask, use_mask:bool, method, fill_value, mode_rank:int, out):
+def _downsample_2d(src, mask, use_mask, method, fill_value, mode_rank, out):
     src_w = src.shape[-1]
     src_h = src.shape[-2]
     out_w = out.shape[-1]
@@ -391,7 +393,7 @@ def _downsample_2d(src, mask, use_mask:bool, method, fill_value, mode_rank:int, 
                         if w > w_max:
                             w_max = w
                             value = values[i]
-                elif 1 < mode_rank < max_value_count:
+                elif mode_rank <= max_value_count:
                     max_frequencies = np.full(mode_rank, -1.0, dtype=np.float64)
                     indices = np.zeros(mode_rank, dtype=np.int64)
                     for i in range(value_count):
