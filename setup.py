@@ -1,19 +1,6 @@
 from setuptools import setup
 
-
-def get_version():
-    version_file = 'gridtools/version.py'
-    locals = {}
-    try:
-        execfile(version_file, globals(), locals)
-    except NameError:
-        with open(version_file) as fp:
-            exec(fp.read(), globals(), locals)
-    return locals.get('version', '0.0.0')
-
-
-# Same effect as "from ect import __version__", but avoids importing ect:
-__version__ = get_version()
+from gridtools import __version__
 
 setup(
     name="gridtools",
