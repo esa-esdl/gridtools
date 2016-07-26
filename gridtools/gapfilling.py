@@ -105,7 +105,7 @@ def _fill_gaps(data, fill_data):
     Fills gap pixels by taking over values from a reduced resolution version of the grid.
 
     :param data: The data to gap-fill
-    :param rr_data: the reduced resolution version.
+    :param fill_data: the data to take fill values from
     :return: a raster using the old raster data array instance, but gap-filled
     """
     out = data.copy()
