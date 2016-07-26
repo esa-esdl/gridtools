@@ -145,3 +145,39 @@ class Downsample2dTest(unittest.TestCase):
                                  2, 2, gtr.DS_LAST, -1,
                                  [[1.5, 1.0],
                                   [2.1, 4.2]])
+
+    def test_aggregation_var(self):
+        # Please note, the expected values below are not verified!
+        self._test_downsample_2d([[0.6, 0.2, 3.4],
+                                  [1.4, NAN, 1.0],
+                                  [4.0, 2.8, 3.0]],
+                                 2, 2, gtr.DS_VAR, -1.,
+                                 [[0.19, 2.04],
+                                  [1.1475, 0.7075]])
+
+        # Please note, the expected values below are not verified!
+        self._test_downsample_2d([[0.9, 0.5, 3.0, 4.0],
+                                  [1.1, 1.5, 1.0, NAN],
+                                  [NAN, 2.1, 3.0, 5.0],
+                                  [NAN, NAN, 4.2, NAN]],
+                                 2, 2, gtr.DS_VAR, -1,
+                                 [[0.13, 1.5555556],
+                                  [0., 0.6755556]])
+
+    def test_aggregation_std(self):
+        # Please note, the expected values below are not verified!
+        self._test_downsample_2d([[0.6, 0.2, 3.4],
+                                  [1.4, NAN, 1.0],
+                                  [4.0, 2.8, 3.0]],
+                                 2, 2, gtr.DS_STD, -1.,
+                                 [[0.43588989, 1.42828569],
+                                  [1.07121426, 0.84113019]])
+
+        # Please note, the expected values below are not verified!
+        self._test_downsample_2d([[0.9, 0.5, 3.0, 4.0],
+                                  [1.1, 1.5, 1.0, NAN],
+                                  [NAN, 2.1, 3.0, 5.0],
+                                  [NAN, NAN, 4.2, NAN]],
+                                 2, 2, gtr.DS_STD, -1,
+                                 [[0.36055513, 1.24721913],
+                                  [0., 0.82192187]])

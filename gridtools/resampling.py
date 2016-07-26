@@ -15,12 +15,21 @@ DS_FIRST = 50
 DS_LAST = 51
 # DS_MIN = 52
 # DS_MAX = 53
-#: Aggregation method for downsampling: Compute average of all valid source grid cells, weight by contribution area.
+#: Aggregation method for downsampling: Compute average of all valid source grid cells,
+#: with weights given by contribution area.
 DS_MEAN = 54
 # DS_MEDIAN = 55
 #: Aggregation method for downsampling: Compute most frequently seen valid source grid cell,
-#: with frequency given by contribution area.
+#: with frequency given by contribution area. Note that this mode can use an additional keyword argument
+#: *mode_rank* which can be used to generate the n-th mode. See :py:function:`downsample_2d`.
 DS_MODE = 56
+#: Aggregation method for downsampling: Compute the biased weighted estimator of variance
+#: (see https://en.wikipedia.org/wiki/Mean_square_weighted_deviation), with weights given by contribution area.
+DS_VAR = 57
+#: Aggregation method for downsampling: Compute the corresponding standard deviation to the biased weighted estimator
+#: of variance
+#: (see https://en.wikipedia.org/wiki/Mean_square_weighted_deviation), with weights given by contribution area.
+DS_STD = 58
 
 #: Constant indicating an empty 2-D mask
 _NOMASK2D = np.ma.getmaskarray(np.ma.array([[0]], mask=[[0]]))
@@ -58,7 +67,8 @@ def resample_2d(src, w, h, ds_method=DS_MEAN, us_method=US_LINEAR, fill_value=No
         return src
     mask, use_mask = _get_mask(src)
     fill_value = _get_fill_value(fill_value, src, out)
-    return _mask_or_not(_resample_2d(src, mask, use_mask, ds_method, us_method, fill_value, mode_rank, out), src, fill_value)
+    return _mask_or_not(_resample_2d(src, mask, use_mask, ds_method, us_method, fill_value, mode_rank, out),
+                        src, fill_value)
 
 
 def upsample_2d(src, w, h, method=US_LINEAR, fill_value=None, out=None):
@@ -446,6 +456,50 @@ def _downsample_2d(src, mask, use_mask, method, fill_value, mode_rank, out):
                 else:
                     out[out_y, out_x] = v_sum / w_sum
 
+    elif method == DS_VAR or method == DS_STD:
+        for out_y in range(out_h):
+            src_yf0 = scale_y * out_y
+            src_yf1 = src_yf0 + scale_y
+            src_y0 = int(src_yf0)
+            src_y1 = int(src_yf1)
+            wy0 = 1.0 - (src_yf0 - src_y0)
+            wy1 = src_yf1 - src_y1
+            if wy1 < _EPS:
+                wy1 = 1.0
+                if src_y1 > src_y0:
+                    src_y1 -= 1
+            for out_x in range(out_w):
+                src_xf0 = scale_x * out_x
+                src_xf1 = src_xf0 + scale_x
+                src_x0 = int(src_xf0)
+                src_x1 = int(src_xf1)
+                wx0 = 1.0 - (src_xf0 - src_x0)
+                wx1 = src_xf1 - src_x1
+                if wx1 < _EPS:
+                    wx1 = 1.0
+                    if src_x1 > src_x0:
+                        src_x1 -= 1
+                v_sum = 0.0
+                w_sum = 0.0
+                wv_sum = 0.0
+                wvv_sum = 0.0
+                for src_y in range(src_y0, src_y1 + 1):
+                    wy = wy0 if (src_y == src_y0) else wy1 if (src_y == src_y1) else 1.0
+                    for src_x in range(src_x0, src_x1 + 1):
+                        wx = wx0 if (src_x == src_x0) else wx1 if (src_x == src_x1) else 1.0
+                        v = src[src_y, src_x]
+                        if np.isfinite(v) and not (use_mask and mask[src_y, src_x]):
+                            w = wx * wy
+                            v_sum += v
+                            w_sum += w
+                            wv_sum += w * v
+                            wvv_sum += w * v * v
+                if w_sum < _EPS:
+                    out[out_y, out_x] = fill_value
+                else:
+                    out[out_y, out_x] = (wvv_sum * w_sum - wv_sum * wv_sum) / w_sum / w_sum
+        if method == DS_STD:
+            out = np.sqrt(out)
     else:
         raise ValueError('invalid upsampling method')
 
