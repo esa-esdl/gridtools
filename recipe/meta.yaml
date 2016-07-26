@@ -1,0 +1,32 @@
+
+package:
+  name: gridtools
+  version: 0.3.0
+
+source:
+  git_url: https://github.com/CAB-LAB/gridtools.git
+  #git_rev: 0.3.0
+
+build:
+  number: 0
+
+requirements:
+  build:
+    - python
+    - numpy
+    - numba >=0.27
+
+  run:
+    - python
+    - numpy
+    - numba >=0.27
+
+test:
+  imports:
+    - gridtools
+    - gridtools.resampling
+    - gridtools.gapfilling
+
+about:
+  license_file: LICENSE
+  license: GPL v3
