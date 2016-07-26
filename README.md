@@ -74,7 +74,8 @@ The module provides functions that allow filling grid cells whose values are not
 
 gridtools uses [Numba](http://numba.pydata.org/) to JIT-compile the resampling functions as it speeds up
 computations by up to a several hundred times (!) compared to plain Python.
-It is strongly recommended to use gridtools with Numba in Miniconda or Anaconda environments.
+
+gridtools is tested with Numba in Miniconda or Anaconda environments.
 
 To disable JIT compilation (e.g. for unit-level testing), set environment variable ``NUMBA_DISABLE_JIT``
 to a non-zero value.
