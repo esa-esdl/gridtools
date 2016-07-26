@@ -5,7 +5,7 @@ package:
 
 source:
   git_url: https://github.com/CAB-LAB/gridtools.git
-  #git_rev: 0.3.0
+  git_rev: v0.3.0
 
 build:
   number: 0
