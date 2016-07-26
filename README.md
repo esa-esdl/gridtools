@@ -1,34 +1,30 @@
 [![Build Status](https://travis-ci.org/CAB-LAB/gridtools.svg?branch=master)](https://travis-ci.org/CAB-LAB/gridtools)
 [![codecov.io](https://codecov.io/github/CAB-LAB/gridtools/coverage.svg?branch=master)](https://codecov.io/github/CAB-LAB/gridtools?branch=master)
 
-# gridtools - Python tools for numeric grids
-
-While there exists a number of Python functions that upsample numeric images and grids
-to a higher resolution, there is a lack in methods that perform grid cell
-aggregation for downsampling grids to a coarser resolution. Most of the existing
-aggregation methods assume an integer factor between source and target grid so that
-contributions of partly overlapping grid cell areas don't exist.
-
-This repo is independent of the ``cablab-core`` repository so that it can be used
-it outside the scope of the CAB-LAB project.
+# gridtools - Python tools for geo-spatial grids
 
 ## Modules
 
 ### Module ``gridtools.resampling``
 
-The ``gridtools.resampling`` module provides high-performance
-regridding functions required the ESA CAB-LAB project: ``resample_2d()``, ``upsample_2d()``,
-``downsample_2d()`` whose aim is to generate a *data cube* of climate data. 
+While there exists a number of Python functions that can be used to upsample geo-spatial 
+images and grids to a higher spatial resolution, there is a generally a lack in methods 
+that perform grid cell aggregation for downsampling grids to a coarser spatial resolution. 
+Most of the existing aggregation methods assume an integer factor between a source and its 
+target grid so that contributions of partly overlapping grid cell areas don't exist.
+
+The ``gridtools.resampling`` module provides the high-performance
+regridding functions ``resample_2d()``, ``upsample_2d()``, and ``downsample_2d()``. 
 
 Downsampling can take into account partial contributions of source grid cells for a given target grid cell; 
 it performs a weighted aggregation of grid cell contributions. 
 
 * Method ``DS_FIRST``: Take first valid source grid cell, ignore contribution areas.
-* Method ``DS_LAST``:Take last valid source grid cell, ignore contribution areas.
+* Method ``DS_LAST``: Take last valid source grid cell, ignore contribution areas.
 * Method ``DS_MEAN``: Compute average of all valid source grid cells, with weights given by contribution area.  
 * Method ``DS_MODE``: Compute most frequently seen valid source grid cell, 
-  with frequency given by contribution area. Note that this mode can use an additional keyword argument
-  *mode_rank* which can be used to generate the n-th mode. See ``downsample_2d()``.
+  with frequency given by contribution area. Note that this method can use an additional keyword argument
+  *mode_rank* which can be used to generate the "n-th Mode". See ``downsample_2d()``.
 * Method ``DS_VAR``: Compute the biased weighted estimator of variance
   (see https://en.wikipedia.org/wiki/Mean_square_weighted_deviation), with weights given by contribution area.
 * Method ``DS_STD``: Compute the corresponding standard deviation to the biased weighted estimator
@@ -40,11 +36,10 @@ continuous values, e.g. temperatures, radiation.
 The methods ``DS_FIRST``, ``DS_LAST`` ``DS_MODE`` are most useful for downsampling grids whose cell 
 values represent classes, e.g. surface types, flags.
 
-Currently, only two upsampling methods exist:
+Currently, only two upsampling methods are provided:
 
 * Method ``US_NEAREST``: Take nearest source grid cell, even if it is invalid.
 * Method ``US_LINEAR``: Bi-linear interpolation between the 4 nearest source grid cells.
-
 
 
 ### Module ``gridtools.gapfilling``
@@ -65,6 +60,15 @@ The module provides functions that allow filling grid cells whose values are not
      a source for gaps in the upsampled, 2x higher resolution grid until the original resolution is reached and all
      gaps are filled (or none).
 
+
+## Limitations
+ 
+* All resampling methods assume the target grids to be in the same coordinate space,
+  hence only a grid scaling is applied where the geometric boundaries and coverage of source and target 
+  remain the same.
+* All methods are currently 2D only because our primary goal is to perform *spatial* resampling.
+* Upsampling is currently limited to only two methods. Use existing alternatives instead such as 
+  ``scipy.misc.imresize`` or similar.    
 
 ## Use of Numba
 
