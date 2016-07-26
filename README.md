@@ -16,16 +16,35 @@ it outside the scope of the CAB-LAB project.
 
 ### Module ``gridtools.resampling``
 
-The ``gridtools.resampling`` module provides high-performance (geometric, 2-D)
-regridding functions needed for the ESA CAB-LAB project: ``resample_2d()``, ``upsample_2d()``,
-``downsample_2d()``. Downsampling can take into account partial contributions of
-source grid cells for a given target grid cell:
+The ``gridtools.resampling`` module provides high-performance
+regridding functions required the ESA CAB-LAB project: ``resample_2d()``, ``upsample_2d()``,
+``downsample_2d()`` whose aim is to generate a *data cube* of climate data. 
 
-* Method ``MEAN``: Average based aggregation weighted by contribution area. Useful
-   for downsampling grids whose cell values represent continuous values, e.g.
-   temperatures, radiation.
-* Method ``MODE``: Frequency/occurrences based aggregation weighted by contribution area. Useful
-   for downsampling grids whose cell values represent classes, e.g. surface types, flags.
+Downsampling can take into account partial contributions of source grid cells for a given target grid cell; 
+it performs a weighted aggregation of grid cell contributions. 
+
+* Method ``DS_FIRST``: Take first valid source grid cell, ignore contribution areas.
+* Method ``DS_LAST``:Take last valid source grid cell, ignore contribution areas.
+* Method ``DS_MEAN``: Compute average of all valid source grid cells, with weights given by contribution area.  
+* Method ``DS_MODE``: Compute most frequently seen valid source grid cell, 
+  with frequency given by contribution area. Note that this mode can use an additional keyword argument
+  *mode_rank* which can be used to generate the n-th mode. See ``downsample_2d()``.
+* Method ``DS_VAR``: Compute the biased weighted estimator of variance
+  (see https://en.wikipedia.org/wiki/Mean_square_weighted_deviation), with weights given by contribution area.
+* Method ``DS_STD``: Compute the corresponding standard deviation to the biased weighted estimator
+  of variance which is basically the square root of the result of method ``DS_VAR``.
+
+The methods ``DS_MEAN``, ``DS_VAR`` ``DS_STD`` are most useful for downsampling grids whose cell values represent 
+continuous values, e.g. temperatures, radiation.
+
+The methods ``DS_FIRST``, ``DS_LAST`` ``DS_MODE`` are most useful for downsampling grids whose cell 
+values represent classes, e.g. surface types, flags.
+
+Currently, only two upsampling methods exist:
+
+* Method ``US_NEAREST``: Take nearest source grid cell, even if it is invalid.
+* Method ``US_LINEAR``: Bi-linear interpolation between the 4 nearest source grid cells.
+
 
 
 ### Module ``gridtools.gapfilling``
