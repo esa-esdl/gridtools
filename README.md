@@ -85,3 +85,8 @@ cases when grids are represented by numpy masked arrays, see https://github.com/
 
 
 
+## Changes
+
+From 0.3 to 0.4
+
+* Changed license from GPL to MIT (#1)
