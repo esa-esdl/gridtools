@@ -37,15 +37,48 @@ _NOMASK2D = np.ma.getmaskarray(np.ma.array([[0]], mask=[[0]]))
 _EPS = 1e-10
 
 
-def resample_2d(src, w, h, ds_method=DS_MEAN, us_method=US_LINEAR, fill_value=None, mode_rank=1, out=None):
+def resample_2d(src, out_w, out_h, src_geom=None, out_geom=None, ds_method=DS_MEAN, us_method=US_LINEAR, fill_value=None, mode_rank=1, out=None):
     """
     Resample a 2-D grid to a new resolution.
 
+    The *src_geom* and *out_geom* parameters are optional sequences that position the source and outputs grids within a
+    common map coordinate system (CS). The grid CS provides the cell indices and assumed to have its
+    origin (0,0) in the upper-left corner of the upper left cell of the grid, with X indices increasing to the "left",
+    and Y indices increasing "downwards".
+
+    For example, the centers of the 3rd cell in X-direction and the 2nd cell in Y-direction would have the grid
+    CS coordinates (2.5, 1.5). With other words, all coordinates in the range (2.0, 1.0) to (2.999..., 1.999...) refer to grid cell index (2,1).
+    (2 - 2.999,3 - 3.999).
+
+    Each of the *src_geom* and *out_geom* sequences comprises six members which are as follows:
+    1. *ref_map_x* The X-coordinate in map CS units ("easting") that corresponds to *ref_cell_x* in grid CS units (= cell indices);
+    2. *ref_map_y* The Y-coordinate in map CS units ("northing") that corresponds to *ref_cell_y* in grid CS units (= cell indices);
+    3. *cell_size_x* The cell size in X-direction in CRS units;
+    4. *cell_size_y* The cell size in Y-direction in CRS units;
+    5. *ref_grid_x* The X-coordinate in grid units to which the *ref_map_x* (easting) value refers to;
+    6. *ref_grid_y* The Y-coordinate in grid units to which the *ref_map_y* (northing) value refers to.
+
+    Note that the *ref_grid_x*, *ref_grid_y* pair is commonly used to specify the anchor of the
+    *ref_map_x*, *ref_map_y* pair. E.g. if ``ref_grid_x=0`` and ``ref_grid_y=0`` then the *ref_grid_x*, *ref_grid_y*
+    pair refers to the upper-left corner of the upper-left grid cell while ``ref_grid_x=0.5`` and ``ref_grid_y=0.5``
+    refers to the center of the same cell (0,0).
+
+    To clarify use of the *src_geom* and *out_geom* parameters here is how they are used to convert a grid CS coordinate
+    pair *grid_x*,*grid_y* into a map CS coordinate pair *map_x*,*map_y*:::
+
+        map_x = ref_map_x + cell_size_x * (grid_x - ref_grid_x)
+        map_y = ref_map_y - cell_size_y * (grid_y - ref_grid_y)
+
     :param src: 2-D *ndarray*
-    :param w: *int*
-        New grid width
-    :param h:  *int*
-        New grid height
+    :param out_w: *int*
+        Output grid width
+    :param out_h:  *int*
+        Output grid height
+    :param src_geom: (unused!!!) optional 6-element sequence that provides the positioning of the source grid
+        in a map CS. If *None*, *src_geom* defaults to ``{0, 0, 1, -1, 0, 0}``.
+    :param out_geom: (unused!!!) optional 6-element sequence that provides the positioning of the output grid
+        in a map CS. If *None*, *out_geom* defaults to
+        ``{src_geom[0], src_geom[1], src_geom[2] * src.shape[-1] / out_w, src_geom[3] * src.shape[-2] / out_h, src_geom[4], src_geom[5] }``.
     :param ds_method: one of the *DS_* constants, optional
         Grid cell aggregation method for a possible downsampling
     :param us_method: one of the *US_* constants, optional
@@ -62,7 +95,7 @@ def resample_2d(src, w, h, ds_method=DS_MEAN, us_method=US_LINEAR, fill_value=No
         shape as the expected output.
     :return: An resampled version of the *src* array.
     """
-    out = _get_out(out, src, (h, w))
+    out = _get_out(out, src, (out_h, out_w))
     if out is None:
         return src
     mask, use_mask = _get_mask(src)
@@ -71,15 +104,15 @@ def resample_2d(src, w, h, ds_method=DS_MEAN, us_method=US_LINEAR, fill_value=No
                         src, fill_value)
 
 
-def upsample_2d(src, w, h, method=US_LINEAR, fill_value=None, out=None):
+def upsample_2d(src, out_w, out_h, method=US_LINEAR, fill_value=None, out=None):
     """
     Upsample a 2-D grid to a higher resolution by interpolating original grid cells.
 
     :param src: 2-D *ndarray*
-    :param w: *int*
-        Grid width, which must be greater than or equal to *src.shape[-1]*
-    :param h:  *int*
-        Grid height, which must be greater than or equal to *src.shape[-2]*
+    :param out_w: *int*
+        Output grid width, which must be greater than or equal to *src.shape[-1]*
+    :param out_h:  *int*
+        Output grid height, which must be greater than or equal to *src.shape[-2]*
     :param method: one of the *US_* constants, optional
         Grid cell interpolation method
     :param fill_value: *scalar*, optional
@@ -91,7 +124,7 @@ def upsample_2d(src, w, h, method=US_LINEAR, fill_value=None, out=None):
         shape as the expected output.
     :return: An upsampled version of the *src* array.
     """
-    out = _get_out(out, src, (h, w))
+    out = _get_out(out, src, (out_h, out_w))
     if out is None:
         return src
     mask, use_mask = _get_mask(src)
@@ -99,15 +132,15 @@ def upsample_2d(src, w, h, method=US_LINEAR, fill_value=None, out=None):
     return _mask_or_not(_upsample_2d(src, mask, use_mask, method, fill_value, out), src, fill_value)
 
 
-def downsample_2d(src, w, h, method=DS_MEAN, fill_value=None, mode_rank=1, out=None):
+def downsample_2d(src, out_w, out_h, method=DS_MEAN, fill_value=None, mode_rank=1, out=None):
     """
     Downsample a 2-D grid to a lower resolution by aggregating original grid cells.
 
     :param src: 2-D *ndarray*
-    :param w: *int*
-        Grid width, which must be less than or equal to *src.shape[-1]*
-    :param h:  *int*
-        Grid height, which must be less than or equal to *src.shape[-2]*
+    :param out_w: *int*
+        Output grid width, which must be less than or equal to *src.shape[-1]*
+    :param out_h:  *int*
+        Output grid height, which must be less than or equal to *src.shape[-2]*
     :param method: one of the *DS_* constants, optional
         Grid cell aggregation method
     :param fill_value: *scalar*, optional
@@ -124,7 +157,7 @@ def downsample_2d(src, w, h, method=DS_MEAN, fill_value=None, mode_rank=1, out=N
     """
     if method == DS_MODE and mode_rank < 1:
         raise ValueError('mode_rank must be >= 1')
-    out = _get_out(out, src, (h, w))
+    out = _get_out(out, src, (out_h, out_w))
     if out is None:
         return src
     mask, use_mask = _get_mask(src)
