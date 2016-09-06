@@ -36,8 +36,12 @@ _NOMASK2D = np.ma.getmaskarray(np.ma.array([[0]], mask=[[0]]))
 
 _EPS = 1e-10
 
+#: Default for *src_geom* and *out_geom* parameters
+_DEFAULT_GEOM = np.array([0.0, 0.0, 1.0, -1.0, 0.0, 0.0], dtype=np.float)
 
-def resample_2d(src, out_w, out_h, src_geom=None, out_geom=None, ds_method=DS_MEAN, us_method=US_LINEAR, fill_value=None, mode_rank=1, out=None):
+
+def resample_2d(src, out_w, out_h, src_geom=None, out_geom=None, ds_method=DS_MEAN, us_method=US_LINEAR,
+                fill_value=None, mode_rank=1, out=None):
     """
     Resample a 2-D grid to a new resolution.
 
@@ -74,9 +78,9 @@ def resample_2d(src, out_w, out_h, src_geom=None, out_geom=None, ds_method=DS_ME
         Output grid width
     :param out_h:  *int*
         Output grid height
-    :param src_geom: (unused!!!) optional 6-element sequence that provides the positioning of the source grid
+    :param src_geom: (unused!!!) optional 6-element *sequence* that provides the positioning of the source grid
         in a map CS. If *None*, *src_geom* defaults to ``{0, 0, 1, -1, 0, 0}``.
-    :param out_geom: (unused!!!) optional 6-element sequence that provides the positioning of the output grid
+    :param out_geom: (unused!!!) optional 6-element *sequence* that provides the positioning of the output grid
         in a map CS. If *None*, *out_geom* defaults to
         ``{src_geom[0], src_geom[1], src_geom[2] * src.shape[-1] / out_w, src_geom[3] * src.shape[-2] / out_h, src_geom[4], src_geom[5] }``.
     :param ds_method: one of the *DS_* constants, optional
@@ -93,26 +97,36 @@ def resample_2d(src, out_w, out_h, src_geom=None, out_geom=None, ds_method=DS_ME
     :param out: 2-D *ndarray*, optional
         Alternate output array in which to place the result. The default is *None*; if provided, it must have the same
         shape as the expected output.
-    :return: An resampled version of the *src* array.
+    :return: A resampled version of the *src* array.
     """
+    src_geom = _get_geom(src_geom, 'src_geom')
+    out_geom = _get_geom(out_geom, 'out_geom')
     out = _get_out(out, src, (out_h, out_w))
     if out is None:
         return src
     mask, use_mask = _get_mask(src)
     fill_value = _get_fill_value(fill_value, src, out)
-    return _mask_or_not(_resample_2d(src, mask, use_mask, ds_method, us_method, fill_value, mode_rank, out),
-                        src, fill_value)
+    return _mask_or_not(
+        _resample_2d(src, src_geom, out_geom, mask, use_mask, ds_method, us_method, fill_value, mode_rank, out),
+        src, fill_value)
 
 
-def upsample_2d(src, out_w, out_h, method=US_LINEAR, fill_value=None, out=None):
+def upsample_2d(src, out_w, out_h, src_geom=None, out_geom=None, method=US_LINEAR, fill_value=None, out=None):
     """
     Upsample a 2-D grid to a higher resolution by interpolating original grid cells.
+
+    Regarding the *src_geom* and *out_geom* parameters refer to the :py:func:``resample_2d`` function.
 
     :param src: 2-D *ndarray*
     :param out_w: *int*
         Output grid width, which must be greater than or equal to *src.shape[-1]*
     :param out_h:  *int*
         Output grid height, which must be greater than or equal to *src.shape[-2]*
+    :param src_geom: (unused!!!) optional 6-element *sequence* that provides the positioning of the source grid
+        in a map CS. If *None*, *src_geom* defaults to ``{0, 0, 1, -1, 0, 0}``.
+    :param out_geom: (unused!!!) optional 6-element *sequence* that provides the positioning of the output grid
+        in a map CS. If *None*, *out_geom* defaults to
+        ``{src_geom[0], src_geom[1], src_geom[2] * src.shape[-1] / out_w, src_geom[3] * src.shape[-2] / out_h, src_geom[4], src_geom[5] }``.
     :param method: one of the *US_* constants, optional
         Grid cell interpolation method
     :param fill_value: *scalar*, optional
@@ -124,23 +138,33 @@ def upsample_2d(src, out_w, out_h, method=US_LINEAR, fill_value=None, out=None):
         shape as the expected output.
     :return: An upsampled version of the *src* array.
     """
+    src_geom = _get_geom(src_geom, 'src_geom')
+    out_geom = _get_geom(out_geom, 'out_geom')
     out = _get_out(out, src, (out_h, out_w))
     if out is None:
         return src
     mask, use_mask = _get_mask(src)
     fill_value = _get_fill_value(fill_value, src, out)
-    return _mask_or_not(_upsample_2d(src, mask, use_mask, method, fill_value, out), src, fill_value)
+    return _mask_or_not(_upsample_2d(src, src_geom, out_geom, mask, use_mask, method, fill_value, out), src, fill_value)
 
 
-def downsample_2d(src, out_w, out_h, method=DS_MEAN, fill_value=None, mode_rank=1, out=None):
+def downsample_2d(src, out_w, out_h, src_geom=None, out_geom=None, method=DS_MEAN, fill_value=None, mode_rank=1,
+                  out=None):
     """
     Downsample a 2-D grid to a lower resolution by aggregating original grid cells.
+
+    Regarding the *src_geom* and *out_geom* parameters refer to the :py:func:``resample_2d`` function.
 
     :param src: 2-D *ndarray*
     :param out_w: *int*
         Output grid width, which must be less than or equal to *src.shape[-1]*
     :param out_h:  *int*
         Output grid height, which must be less than or equal to *src.shape[-2]*
+    :param src_geom: (unused!!!) optional 6-element *sequence* that provides the positioning of the source grid
+        in a map CS. If *None*, *src_geom* defaults to ``{0, 0, 1, -1, 0, 0}``.
+    :param out_geom: (unused!!!) optional 6-element *sequence* that provides the positioning of the output grid
+        in a map CS. If *None*, *out_geom* defaults to
+        ``{src_geom[0], src_geom[1], src_geom[2] * src.shape[-1] / out_w, src_geom[3] * src.shape[-2] / out_h, src_geom[4], src_geom[5] }``.
     :param method: one of the *DS_* constants, optional
         Grid cell aggregation method
     :param fill_value: *scalar*, optional
@@ -155,6 +179,8 @@ def downsample_2d(src, out_w, out_h, method=DS_MEAN, fill_value=None, mode_rank=
         shape as the expected output.
     :return: A downsampled version of the *src* array.
     """
+    src_geom = _get_geom(src_geom, 'src_geom')
+    out_geom = _get_geom(out_geom, 'out_geom')
     if method == DS_MODE and mode_rank < 1:
         raise ValueError('mode_rank must be >= 1')
     out = _get_out(out, src, (out_h, out_w))
@@ -162,7 +188,20 @@ def downsample_2d(src, out_w, out_h, method=DS_MEAN, fill_value=None, mode_rank=
         return src
     mask, use_mask = _get_mask(src)
     fill_value = _get_fill_value(fill_value, src, out)
-    return _mask_or_not(_downsample_2d(src, mask, use_mask, method, fill_value, mode_rank, out), src, fill_value)
+    return _mask_or_not(_downsample_2d(src, src_geom, out_geom, mask, use_mask, method, fill_value, mode_rank, out),
+                        src, fill_value)
+
+
+def _get_geom(geom, name):
+    if geom is None:
+        return _DEFAULT_GEOM
+    try:
+        n = len(geom)
+    except TypeError:
+        n = -1
+    if n != 6:
+        raise ValueError('%s must be a sequence of 6 float elements' % name)
+    return np.array(geom, dtype=np.float, copy=False)
 
 
 def _get_out(out, src, shape):
@@ -213,32 +252,34 @@ def _get_fill_value(fill_value, src, out):
 # Key-value args are not allowed.
 #
 @jit(nopython=True)
-def _resample_2d(src, mask, use_mask, ds_method, us_method, fill_value, mode_rank, out):
+def _resample_2d(src, src_geom, out_geom, mask, use_mask, ds_method, us_method, fill_value, mode_rank, out):
     src_w = src.shape[-1]
     src_h = src.shape[-2]
     out_w = out.shape[-1]
     out_h = out.shape[-2]
 
     if out_w < src_w and out_h < src_h:
-        return _downsample_2d(src, mask, use_mask, ds_method, fill_value, mode_rank, out)
+        return _downsample_2d(src, src_geom, out_geom, mask, use_mask, ds_method, fill_value, mode_rank, out)
     elif out_w < src_w:
         if out_h > src_h:
             temp = np.zeros((src_h, out_w), dtype=src.dtype)
-            temp = _downsample_2d(src, mask, use_mask, ds_method, fill_value, mode_rank, temp)
+            # todo - write test & fix: must create and use temp_out_geom first
+            temp = _downsample_2d(src, src_geom, out_geom, mask, use_mask, ds_method, fill_value, mode_rank, temp)
             # todo - write test & fix: must use mask=np.ma.getmaskarray(temp) here if use_mask==True
-            return _upsample_2d(temp, mask, use_mask, us_method, fill_value, out)
+            return _upsample_2d(temp, src_geom, out_geom, mask, use_mask, us_method, fill_value, out)
         else:
-            return _downsample_2d(src, mask, use_mask, ds_method, fill_value, mode_rank, out)
+            return _downsample_2d(src, src_geom, out_geom, mask, use_mask, ds_method, fill_value, mode_rank, out)
     elif out_h < src_h:
         if out_w > src_w:
             temp = np.zeros((out_h, src_w), dtype=src.dtype)
-            temp = _downsample_2d(src, mask, use_mask, ds_method, fill_value, mode_rank, temp)
+            # todo - write test & fix: must create and use temp_out_geom first
+            temp = _downsample_2d(src, src_geom, out_geom, mask, use_mask, ds_method, fill_value, mode_rank, temp)
             # todo - write test & fix: must use mask=np.ma.getmaskarray(temp) here if use_mask==True
-            return _upsample_2d(temp, mask, use_mask, us_method, fill_value, out)
+            return _upsample_2d(temp, src_geom, out_geom, mask, use_mask, us_method, fill_value, out)
         else:
-            return _downsample_2d(src, mask, use_mask, ds_method, fill_value, mode_rank, out)
+            return _downsample_2d(src, src_geom, out_geom, mask, use_mask, ds_method, fill_value, mode_rank, out)
     elif out_w > src_w or out_h > src_h:
-        return _upsample_2d(src, mask, use_mask, us_method, fill_value, out)
+        return _upsample_2d(src, src_geom, out_geom, mask, use_mask, us_method, fill_value, out)
     return src
 
 
@@ -247,7 +288,13 @@ def _resample_2d(src, mask, use_mask, ds_method, us_method, fill_value, mode_ran
 # Key-value args are not allowed.
 #
 @jit(nopython=True)
-def _upsample_2d(src, mask, use_mask, method, fill_value, out):
+def _upsample_2d(src, src_geom, out_geom, mask, use_mask, method, fill_value, out):
+    src_map_x, src_map_y, src_cell_size_x, src_cell_size_y, src_ref_grid_x, src_ref_grid_y = src_geom
+    out_map_x, out_map_y, out_cell_size_x, out_cell_size_y, out_ref_grid_x, out_ref_grid_y = out_geom
+
+    # map_x = ref_map_x + cell_size_x * (grid_x - ref_grid_x)
+    # map_y = ref_map_y - cell_size_y * (grid_y - ref_grid_y)
+
     src_w = src.shape[-1]
     src_h = src.shape[-2]
     out_w = out.shape[-1]
@@ -340,7 +387,13 @@ def _upsample_2d(src, mask, use_mask, method, fill_value, out):
 # Key-value args are not allowed.
 #
 @jit(nopython=True)
-def _downsample_2d(src, mask, use_mask, method, fill_value, mode_rank, out):
+def _downsample_2d(src, src_geom, out_geom, mask, use_mask, method, fill_value, mode_rank, out):
+    src_map_x, src_map_y, src_cell_size_x, src_cell_size_y, src_ref_grid_x, src_ref_grid_y = src_geom
+    out_map_x, out_map_y, out_cell_size_x, out_cell_size_y, out_ref_grid_x, out_ref_grid_y = out_geom
+
+    # map_x = ref_map_x + cell_size_x * (grid_x - ref_grid_x)
+    # map_y = ref_map_y - cell_size_y * (grid_y - ref_grid_y)
+
     src_w = src.shape[-1]
     src_h = src.shape[-2]
     out_w = out.shape[-1]
