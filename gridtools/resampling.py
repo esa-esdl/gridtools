@@ -26,10 +26,6 @@ DS_MODE = 56
 #: Aggregation method for downsampling: Compute the biased weighted estimator of variance
 #: (see https://en.wikipedia.org/wiki/Mean_square_weighted_deviation), with weights given by contribution area.
 DS_VAR = 57
-#: Aggregation method for downsampling: Compute the corresponding standard deviation to the biased weighted estimator
-#: of variance
-#: (see https://en.wikipedia.org/wiki/Mean_square_weighted_deviation), with weights given by contribution area.
-DS_STD = 58
 
 #: Constant indicating an empty 2-D mask
 _NOMASK2D = np.ma.getmaskarray(np.ma.array([[0]], mask=[[0]]))
@@ -542,7 +538,7 @@ def _downsample_2d(src, src_geom, out_geom, mask, use_mask, method, fill_value, 
                 else:
                     out[out_y, out_x] = v_sum / w_sum
 
-    elif method == DS_VAR or method == DS_STD:
+    elif method == DS_VAR:
         for out_y in range(out_h):
             src_yf0 = scale_y * out_y
             src_yf1 = src_yf0 + scale_y
@@ -584,8 +580,7 @@ def _downsample_2d(src, src_geom, out_geom, mask, use_mask, method, fill_value, 
                     out[out_y, out_x] = fill_value
                 else:
                     out[out_y, out_x] = (wvv_sum * w_sum - wv_sum * wv_sum) / w_sum / w_sum
-        if method == DS_STD:
-            out = np.sqrt(out)
+
     else:
         raise ValueError('invalid upsampling method')
 

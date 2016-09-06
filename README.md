@@ -27,13 +27,13 @@ it performs a weighted aggregation of grid cell contributions.
   *mode_rank* which can be used to generate the "n-th Mode". See ``downsample_2d()``.
 * Method ``DS_VAR``: Compute the biased weighted estimator of variance
   (see https://en.wikipedia.org/wiki/Mean_square_weighted_deviation), with weights given by contribution area.
-* Method ``DS_STD``: Compute the corresponding standard deviation to the biased weighted estimator
-  of variance which is basically the square root of the result of method ``DS_VAR``.
+  The corresponding standard deviation may be computed by applying the square root to the result of method 
+  ``DS_VAR``.
 
-The methods ``DS_MEAN``, ``DS_VAR`` ``DS_STD`` are most useful for downsampling grids whose cell values represent 
+The methods ``DS_MEAN`` and ``DS_VAR`` are most useful for downsampling grids whose cell values represent 
 continuous values, e.g. temperatures, radiation.
 
-The methods ``DS_FIRST``, ``DS_LAST`` ``DS_MODE`` are most useful for downsampling grids whose cell 
+The methods ``DS_FIRST``, ``DS_LAST``, and ``DS_MODE`` are most useful for downsampling grids whose cell 
 values represent classes, e.g. surface types, flags.
 
 Currently, only two upsampling methods are provided:
@@ -84,9 +84,9 @@ There is an issue in Numba that currently limits its use in certain
 cases when grids are represented by numpy masked arrays, see https://github.com/numba/numba/issues/1834
 
 
-
 ## Changes
 
 From 0.3 to 0.4
 
 * Changed license from GPL to MIT (#1)
+* Allow for resampling on geographic CS (#2, in progress)
