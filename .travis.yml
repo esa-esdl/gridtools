@@ -22,7 +22,7 @@ script:
   - py.test -v --cov=gridtools test/
   - source deactivate
   - conda install conda-build anaconda-client
-  - conda build -c conda-forge -c numba -c anaconda recipe
+  - conda build --old-build-string -c conda-forge -c numba -c anaconda recipe
 
 after_success:
   - pip install codecov
