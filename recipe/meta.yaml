@@ -12,14 +12,14 @@ build:
 
 requirements:
   build:
-    - python
-    - numpy
-    - numba >=0.27
+    - python 3.6*
+    - numpy >=1.13
+    - numba >=0.34
 
   run:
     - python
-    - numpy
-    - numba >=0.27
+    - numpy >=1.13
+    - numba >=0.34
 
 test:
   imports:
@@ -28,6 +28,7 @@ test:
     - gridtools.gapfilling
 
 about:
+  home: https://github.com/CAB-LAB/gridtools
   license: MIT
   license_file: LICENSE
 
