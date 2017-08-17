@@ -27,5 +27,5 @@ script:
 after_success:
   - pip install codecov
   - codecov --env TRAVIS_PYTHON_VERSION
-  - RECIPE_OUTPUT=$(conda build -c conda-forge -c numba -c anaconda recipe --output)
+  - RECIPE_OUTPUT=$(conda build --old-build-string -c conda-forge -c numba -c anaconda recipe --output)
   - anaconda -v -t $ANACONDA_TOKEN upload "$RECIPE_OUTPUT" -u cablab --force
