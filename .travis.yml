@@ -27,10 +27,10 @@ script:
   - py.test -v --cov=gridtools test/
   - source deactivate
   - conda install conda-build anaconda-client
-  - conda build --old-build-string -c conda-forge -c numba -c anaconda recipe
+  - conda build --py $TRAVIS_PYTHON_VERSION --old-build-string -c conda-forge -c numba -c anaconda recipe
 
 after_success:
   - pip install codecov
   - codecov --env TRAVIS_PYTHON_VERSION
-  - RECIPE_OUTPUT=$(conda build --old-build-string -c conda-forge -c numba -c anaconda recipe --output)
+  - RECIPE_OUTPUT=$(conda build --py $TRAVIS_PYTHON_VERSION --old-build-string -c conda-forge -c numba -c anaconda recipe --output)
   - anaconda -v -t $ANACONDA_TOKEN upload "$RECIPE_OUTPUT" -u cablab --force
