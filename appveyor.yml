@@ -1,7 +1,7 @@
 version: '0.4.0.dev.{build}'
 
 environment:
-  global:
+#  global:
       # Example can be found here https://github.com/quantopian/zipline/blob/master/appveyor.yml
 #      ANACONDA_TOKEN: # not required anymore since it is configured at AppVeyor
   matrix:
