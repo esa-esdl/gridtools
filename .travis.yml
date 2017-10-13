@@ -14,11 +14,7 @@ install:
   - conda update -q conda
   # Useful for debugging any issues with conda
   - conda info -a
-  - if [[ $TRAVIS_PYTHON_VERSION == 3.6 ]]; then
-      conda env create --file environment.yml;
-    else
-      conda env create --file environment-35.yml;
-    fi
+  - conda env create --file environment-$TRAVIS_PYTHON_VERSION.yml;
   - source activate gridtools
   - python setup.py install
 
