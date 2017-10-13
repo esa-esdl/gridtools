@@ -17,7 +17,7 @@ install:
   - cmd: conda info -a
 
 build_script:
-  - cmd: conda env create --file environment-%PYTHON_VERSION%.yml;
+  - cmd: conda env create --file environment-%PYTHON_VERSION%.yml
   - cmd: call %PYTHON_LOC%\Scripts\activate.bat gridtools
   - cmd: python setup.py install
   - cmd: conda list
