@@ -1,6 +1,7 @@
 language: python
 python:
   - "3.6"
+  - "3.5"
 install:
   - sudo apt-get update
   # We do this conditionally because it saves us some downloading if the
@@ -13,7 +14,11 @@ install:
   - conda update -q conda
   # Useful for debugging any issues with conda
   - conda info -a
-  - conda env create --file environment.yml
+  - if [[ $TRAVIS_PYTHON_VERSION == 3.6 ]]; then
+      conda env create --file environment.yml;
+    else
+      conda env create --file environment-35.yml
+    fi
   - source activate gridtools
   - python setup.py install
 
