@@ -27,7 +27,9 @@ script:
   - py.test -v --cov=gridtools test/
   - source deactivate
   - conda install conda-build anaconda-client
-  - "conda build --old-build-string -c conda-forge -c numba -c anaconda recipe --variants \"{'python': ['3.5', '3.6']}\""
+# did not work even though stated here https://conda.io/docs/user-guide/tasks/build-packages/variants.html#coupling-keys
+#  - "conda build --old-build-string -c conda-forge -c numba -c anaconda recipe --variants \"{'python': ['3.5', '3.6']}\""
+  - conda build --old-build-string -c conda-forge -c numba -c anaconda recipe
 
 after_success:
   - pip install codecov
