@@ -25,10 +25,10 @@ script:
   - conda install conda-build anaconda-client
 # did not work even though stated here https://conda.io/docs/user-guide/tasks/build-packages/variants.html#coupling-keys
 #  - "conda build --old-build-string -c conda-forge -c numba -c anaconda recipe --variants \"{'python': ['3.5', '3.6']}\""
-  - conda build --old-build-string -c conda-forge -c numba -c anaconda recipe -m recipe/conda_build_config.$TRAVIS_PYTHON_VERSION.yaml
+  - conda build --old-build-string -c conda-forge -c anaconda recipe -m recipe/conda_build_config.$TRAVIS_PYTHON_VERSION.yaml
 
 after_success:
   - pip install codecov
   - codecov --env TRAVIS_PYTHON_VERSION
-  - RECIPE_OUTPUT=$(conda build --py $TRAVIS_PYTHON_VERSION --old-build-string -c conda-forge -c numba -c anaconda recipe --output)
+  - RECIPE_OUTPUT=$(conda build --py $TRAVIS_PYTHON_VERSION --old-build-string -c conda-forge -c anaconda recipe --output)
   - anaconda -v -t $ANACONDA_TOKEN upload "$RECIPE_OUTPUT" -u cablab --force
