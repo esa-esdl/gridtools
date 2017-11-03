@@ -30,5 +30,5 @@ script:
 after_success:
   - pip install codecov
   - codecov --env TRAVIS_PYTHON_VERSION
-  - RECIPE_OUTPUT=$(conda build --py $TRAVIS_PYTHON_VERSION --old-build-string -c conda-forge -c anaconda recipe --output)
+  - RECIPE_OUTPUT=$(conda build --py $TRAVIS_PYTHON_VERSION --old-build-string -c conda-forge -c anaconda recipe -m recipe/conda_build_config.$TRAVIS_PYTHON_VERSION.yaml --output)
   - anaconda -v -t $ANACONDA_TOKEN upload "$RECIPE_OUTPUT" -u cablab --force
