@@ -14,13 +14,13 @@ requirements:
   build:
     # use build variant : https://conda.io/docs/user-guide/tasks/build-packages/variants.html
     - python {{ python }}
-    - numpy ==1.13
-    - numba ==0.28
+    - numpy {{ numpy }}
+    - numba {{ numba }}
 
   run:
     - python {{ python }}
-    - numpy ==1.13
-    - numba ==0.28
+    - numpy {{ numpy }}
+    - numba {{ numba }}
 
 # todo - tests only failed in Windows build, must investigate
 test:
