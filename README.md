@@ -1,5 +1,5 @@
-[![Build Status](https://travis-ci.org/CAB-LAB/gridtools.svg?branch=master)](https://travis-ci.org/CAB-LAB/gridtools)
-[![codecov.io](https://codecov.io/github/CAB-LAB/gridtools/coverage.svg?branch=master)](https://codecov.io/github/CAB-LAB/gridtools?branch=master)
+[![Build Status](https://travis-ci.org/esa-esdl/gridtools.svg?branch=master)](https://travis-ci.org/esa-esdl/gridtools)
+[![codecov.io](https://codecov.io/github/esa-esdl/gridtools/coverage.svg?branch=master)](https://codecov.io/github/esa-esdl/gridtools?branch=master)
 
 # gridtools - Python tools for geo-spatial grids
 
