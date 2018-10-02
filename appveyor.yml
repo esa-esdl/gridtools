@@ -24,7 +24,3 @@ build_script:
   - cmd: python setup.py install
   - cmd: conda list
   - cmd: py.test -v test
-  - cmd: call %PYTHON_LOC%\Scripts\activate.bat root
-  - cmd: conda install conda-build anaconda-client
-  - cmd: conda build --old-build-string -c conda-forge -c anaconda recipe -m recipe/conda_build_config.yaml
-  - cmd: anaconda -v -t %ANACONDA_TOKEN% upload "%PYTHON_LOC%\conda-bld\win-64\gridtools*.tar.bz2" -u cablab --force
