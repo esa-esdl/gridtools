@@ -4,9 +4,9 @@ channels:
     - numba
     - anaconda
 dependencies:
-    - python ==3.5
-    - numpy=1.11.3=py35_0
-    - numba=0.28.1=np111py35_0
+    - python >=3.5
+    - numpy>=1.13,<2.0
+    - numba>0.35,<1.0
     #
     # for testing only
     #

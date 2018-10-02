@@ -4,7 +4,7 @@ package:
   version: 0.4.1
 
 source:
-  git_url: https://github.com/CAB-LAB/gridtools.git
+  git_url: https://github.com/esa-esdl/gridtools.git
 #  git_rev: v0.4.0rc0+1
 
 build:
@@ -30,7 +30,7 @@ test:
     - gridtools.gapfilling
 
 about:
-  home: https://github.com/CAB-LAB/gridtools
+  home: https://github.com/esa-esdl/gridtools
   license: MIT
   license_file: LICENSE
 
