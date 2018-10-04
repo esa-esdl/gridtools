@@ -11,6 +11,9 @@ environment:
       PYTHON_VERSION: 3.6
     - PYTHON_LOC: "C:\\Miniconda35-x64"
       PYTHON_VERSION: 3.5
+    - PYTHON_LOC: "C:\\Miniconda27-x64"
+      PYTHON_VERSION: 2.7
+
 
 install:
   - cmd: call %PYTHON_LOC%\Scripts\activate.bat
