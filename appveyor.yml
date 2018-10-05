@@ -5,10 +5,13 @@ environment:
       # Example can be found here https://github.com/quantopian/zipline/blob/master/appveyor.yml
 #      ANACONDA_TOKEN: # not required anymore since it is configured at AppVeyor
   matrix:
+    - PYTHON_LOC: "C:\\Miniconda37-x64"
+      PYTHON_VERSION: 3.7
     - PYTHON_LOC: "C:\\Miniconda36-x64"
       PYTHON_VERSION: 3.6
     - PYTHON_LOC: "C:\\Miniconda35-x64"
       PYTHON_VERSION: 3.5
+
 
 install:
   - cmd: call %PYTHON_LOC%\Scripts\activate.bat
@@ -17,12 +20,8 @@ install:
   - cmd: conda info -a
 
 build_script:
-  - cmd: conda env create --file environment-%PYTHON_VERSION%.yml
+  - cmd: conda env create --file environment.yml
   - cmd: call %PYTHON_LOC%\Scripts\activate.bat gridtools
   - cmd: python setup.py install
   - cmd: conda list
   - cmd: py.test -v test
-  - cmd: call %PYTHON_LOC%\Scripts\activate.bat root
-  - cmd: conda install conda-build anaconda-client
-  - cmd: conda build --old-build-string -c conda-forge -c anaconda recipe -m recipe/conda_build_config.%PYTHON_VERSION%.yaml
-  - cmd: anaconda -v -t %ANACONDA_TOKEN% upload "%PYTHON_LOC%\conda-bld\win-64\gridtools*.tar.bz2" -u cablab --force

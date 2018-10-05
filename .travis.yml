@@ -2,6 +2,14 @@ language: python
 python:
   - "3.6"
   - "3.5"
+
+# Enable 3.7 without globally enabling sudo and dist: xenial for other build jobs
+matrix:
+  include:
+  - python: 3.7
+    dist: xenial
+    sudo: true
+
 install:
   - sudo apt-get update
   # We do this conditionally because it saves us some downloading if the
@@ -14,21 +22,14 @@ install:
   - conda update -q conda
   # Useful for debugging any issues with conda
   - conda info -a
-  - conda env create --file environment-$TRAVIS_PYTHON_VERSION.yml;
+  - conda env create --file environment.yml;
   - source activate gridtools
   - python setup.py install
 
 script:
   - export NUMBA_DISABLE_JIT=1
   - py.test -v --cov=gridtools test/
-  - source deactivate
-  - conda install conda-build anaconda-client
-# did not work even though stated here https://conda.io/docs/user-guide/tasks/build-packages/variants.html#coupling-keys
-#  - "conda build --old-build-string -c conda-forge -c numba -c anaconda recipe --variants \"{'python': ['3.5', '3.6']}\""
-  - conda build --old-build-string -c conda-forge -c anaconda recipe -m recipe/conda_build_config.$TRAVIS_PYTHON_VERSION.yaml
 
 after_success:
   - pip install codecov
   - codecov --env TRAVIS_PYTHON_VERSION
-  - RECIPE_OUTPUT=$(conda build --py $TRAVIS_PYTHON_VERSION --old-build-string -c conda-forge -c anaconda recipe -m recipe/conda_build_config.$TRAVIS_PYTHON_VERSION.yaml --output)
-  - anaconda -v -t $ANACONDA_TOKEN upload "$RECIPE_OUTPUT" -u cablab --force
