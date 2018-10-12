@@ -22,7 +22,7 @@ install:
   - conda update -q conda
   # Useful for debugging any issues with conda
   - conda info -a
-  - sed -i "s/python >=3.5/python ==${$TRAVIS_PYTHON_VERSION}/g" environment.yml
+  - sed -i "s/python >=3.5/python =="$(echo $TRAVIS_PYTHON_VERSION)"/g" environment.yml
   - conda env create --file environment.yml;
   - source activate gridtools
   - python setup.py install
