@@ -181,3 +181,39 @@ class Downsample2dTest(unittest.TestCase):
                                  2, 2, gtr.DS_STD, -1,
                                  [[0.36055513, 1.24721913],
                                   [0., 0.82192187]])
+
+
+SRC = np.array(
+    [
+        [0.6, 0.2, 3.4],
+        [1.4, 1.6, 1.0],
+        [4.0, 2.8, 3.0],
+    ]
+)
+
+def test_downsample_2d_with_functions():
+    def p50(values, weights):
+        values = values[weights > 0]
+        return  np.percentile(values, 50)
+
+    assert np.array_equal(gtr.downsample_2d(SRC, 2, 2, method=p50),
+        np.array([[1.0, 1.3], [2.2, 2.2]]))
+
+    def harmonic_mean(values, weights):
+        s = values.size
+        v_agg = 0.0
+        w_sum = 0.0
+        for i in range(s):
+            w = weights[i]
+            if w > 0:
+                w_sum += w
+                v_agg += w / values[i]
+        return w_sum / v_agg
+    
+    assert np.array_equal(gtr.downsample_2d(SRC, 2, 2, method=harmonic_mean),
+        np.array(
+            [
+                [2.25 / (1 / 0.6 + 0.5 / 0.2 + 0.5 / 1.4 + 0.25 / 1.6), 2.25 / (1 / 3.4 + 0.5 / 0.2 + 0.5 / 1.0 + 0.25 / 1.6)],
+                [2.25 / (1 / 4.0 + 0.5 / 2.8 + 0.5 / 1.4 + 0.25 / 1.6), 2.25 / (1 / 3.0 + 0.5 / 2.8 + 0.5 / 1.0 + 0.25 / 1.6)]]
+        )
+    )
