@@ -1,7 +1,7 @@
 import unittest
 
 import numpy as np
-
+from numba import jit
 import gridtools.resampling as gtr
 
 NAN = np.nan
@@ -192,6 +192,7 @@ SRC = np.array(
 )
 
 def test_downsample_2d_with_functions():
+    @jit(nopython=True)
     def p50(values, weights):
         values = values[weights > 0]
         return  np.percentile(values, 50)
@@ -199,6 +200,7 @@ def test_downsample_2d_with_functions():
     assert np.array_equal(gtr.downsample_2d(SRC, 2, 2, method=p50),
         np.array([[1.0, 1.3], [2.2, 2.2]]))
 
+    @jit(nopython=True)
     def harmonic_mean(values, weights):
         s = values.size
         v_agg = 0.0

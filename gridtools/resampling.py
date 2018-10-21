@@ -3,6 +3,7 @@ from __future__ import division
 
 import numpy as np
 from numba import jit
+from numba.targets.registry import CPUDispatcher
 
 #: Interpolation method for upsampling: Take nearest source grid cell, even if it is invalid.
 US_NEAREST = 10
@@ -129,9 +130,8 @@ def downsample_2d(src, w, h, method=DS_MEAN, fill_value=None, mode_rank=1, out=N
         return src
     mask, use_mask = _get_mask(src)
     fill_value = _get_fill_value(fill_value, src, out)
-    if callable(method):
-        func = jit(method, nopython=True)
-        return _mask_or_not(_downsample_2d_func(src, mask, use_mask, func, fill_value, out), src, fill_value)
+    if isinstance(method, CPUDispatcher):
+        return _mask_or_not(_downsample_2d_func(src, mask, use_mask, method, fill_value, out), src, fill_value)
     else:
         return _mask_or_not(_downsample_2d(src, mask, use_mask, method, fill_value, mode_rank, out), src, fill_value)
 
