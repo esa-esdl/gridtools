@@ -99,7 +99,7 @@ def upsample_2d(src, w, h, method=US_LINEAR, fill_value=None, out=None):
     return _mask_or_not(_upsample_2d(src, mask, use_mask, method, fill_value, out), src, fill_value)
 
 
-def downsample_2d(src, w, h, method=DS_MEAN, fill_value=None, mode_rank=1, out=None):
+def downsample_2d(src, w, h, method=DS_MEAN, fill_value=None, mode_rank=1, out=None, src_transform=None, out_transform=None):
     """
     Downsample a 2-D grid to a lower resolution by aggregating original grid cells.
 
@@ -120,16 +120,39 @@ def downsample_2d(src, w, h, method=DS_MEAN, fill_value=None, mode_rank=1, out=N
     :param out: 2-D *ndarray*, optional
         Alternate output array in which to place the result. The default is *None*; if provided, it must have the same
         shape as the expected output.
+    :param src_transform: *affine* transform, optional
+        Affine object/tuple/array/list containing (width of pixel, row rotation, upper left x-coordinate,
+        column rotation, height of pixel, upper left y-coordinate) of the src array.
+        Column and row rotation are not supported.
+    :param out_transform: *affine* transform, optional
+        Affine object/tuple/array/list containing (width of pixel, row rotation, upper left x-coordinate,
+        column rotation, height of pixel, upper left y-coordinate) of the out array.
+        Column and row rotation are not supported.
     :return: A downsampled version of the *src* array.
     """
     if method == DS_MODE and mode_rank < 1:
         raise ValueError('mode_rank must be >= 1')
     out = _get_out(out, src, (h, w))
+
+    if (src_transform is None) ^ (out_transform is None):
+        raise ValueError("Either no transform should be given, or both")
+    elif src_transform is not None and out_transform is not None:
+        src_transform, out_transform = _check_transform(src_transform, out_transform, src, out)
+        src_dx, src_dy = src_transform[0], src_transform[4]
+        out_dx, out_dy = out_transform[0], out_transform[4]
+        if abs(out_dx) < abs(src_dx) or abs(out_dy) < abs(src_dy):
+            raise ValueError("Invalid cellsize in 'out_transform'")
+        use_transform = True
+    else:
+        src_transform = np.zeros(6,)
+        out_transform = np.zeros(6,)
+        use_transform = False
+
     if out is None:
         return src
     mask, use_mask = _get_mask(src)
     fill_value = _get_fill_value(fill_value, src, out)
-    return _mask_or_not(_downsample_2d(src, mask, use_mask, method, fill_value, mode_rank, out), src, fill_value)
+    return _mask_or_not(_downsample_2d(src, mask, use_mask, method, fill_value, mode_rank, out, use_transform, src_transform, out_transform), src, fill_value)
 
 
 def _get_out(out, src, shape):
@@ -141,6 +164,32 @@ def _get_out(out, src, shape):
         if out.shape == src.shape:
             return None
         return out
+
+
+def _check_transform(src_transform, out_transform, src, out):
+    src_transform = np.array(src_transform[:6], dtype=np.float64)
+    out_transform = np.array(out_transform[:6], dtype=np.float64)
+    src_dx, src_xrot, src_xcov0, src_yrot, src_dy, src_ycov0 = src_transform
+    out_dx, out_xrot, out_xcov0, out_yrot, out_dy, out_ycov0 = out_transform
+    src_w = src.shape[-1]
+    src_h = src.shape[-2]
+    out_w = out.shape[-1]
+    out_h = out.shape[-2]
+    src_xcov1 = src_xcov0 + src_w * src_dx
+    out_xcov1 = out_xcov0 + out_w * out_dx
+    src_ycov1 = src_ycov0 + src_h * src_dy
+    out_ycov1 = out_ycov0 + out_h * out_dy
+    if (src_xrot or src_yrot or out_xrot or out_yrot) != 0:
+        raise NotImplementedError("Resampling rotated grids is not supported")
+    if src_dx * out_dx < 0:
+        raise ValueError("Incompatible 'src_transform' and 'out_transform': pixel widths must have the same sign")
+    if src_dy * out_dy < 0:
+        raise ValueError("Incompatible 'src_transform' and 'out_transform': pixel heights must have the same sign")
+    if (out_xcov1 - src_xcov1) * src_dx > 0 or (out_xcov0 - src_xcov0) * src_dx < 0:
+        raise ValueError("Invalid target coverage: target x outside of src")
+    if (out_ycov1 - src_ycov1) * src_dy > 0 or (out_ycov0 - src_ycov0) * src_dy < 0:
+        raise ValueError("Invalid target coverage: target y outside of src")
+    return src_transform, out_transform
 
 
 def _get_mask(src):
@@ -307,31 +356,40 @@ def _upsample_2d(src, mask, use_mask, method, fill_value, out):
 # Key-value args are not allowed.
 #
 @jit(nopython=True)
-def _downsample_2d(src, mask, use_mask, method, fill_value, mode_rank, out):
+def _downsample_2d(src, mask, use_mask, method, fill_value, mode_rank, out, use_transform=False, src_transform=np.zeros((6,)), out_transform=np.zeros(6,)):
+    # np.zeros is as default necessary for numba, it tries to unpack src_transform and out_transform
     src_w = src.shape[-1]
     src_h = src.shape[-2]
     out_w = out.shape[-1]
     out_h = out.shape[-2]
 
-    if src_w == out_w and src_h == out_h:
-        return src
-
-    if out_w > src_w or out_h > src_h:
-        raise ValueError("invalid target size")
-
-    scale_x = src_w / out_w
-    scale_y = src_h / out_h
+    if use_transform:
+        src_dx, _, src_xcov0, _, src_dy, src_ycov0 = src_transform
+        out_dx, _, out_xcov0, _, out_dy, out_ycov0 = out_transform
+        scale_x = out_dx / src_dx
+        scale_y = out_dy / src_dy
+        x_offset = (out_xcov0 - src_xcov0) / src_dx
+        y_offset = (out_ycov0 - src_ycov0) / src_dy
+    else:
+        if src_w == out_w and src_h == out_h:
+            return src
+        if out_w > src_w or out_h > src_h:
+            raise ValueError("invalid target size")
+        scale_x = src_w / out_w
+        scale_y = src_h / out_h
+        x_offset = 0.0
+        y_offset = 0.0
 
     if method == DS_FIRST or method == DS_LAST:
         for out_y in range(out_h):
-            src_yf0 = scale_y * out_y
+            src_yf0 = y_offset + scale_y * out_y
             src_yf1 = src_yf0 + scale_y
             src_y0 = int(src_yf0)
             src_y1 = int(src_yf1)
             if src_y1 == src_yf1 and src_y1 > src_y0:
                 src_y1 -= 1
             for out_x in range(out_w):
-                src_xf0 = scale_x * out_x
+                src_xf0 = x_offset + scale_x * out_x
                 src_xf1 = src_xf0 + scale_x
                 src_x0 = int(src_xf0)
                 src_x1 = int(src_xf1)
@@ -356,7 +414,7 @@ def _downsample_2d(src, mask, use_mask, method, fill_value, mode_rank, out):
         values = np.zeros((max_value_count,), dtype=src.dtype)
         frequencies = np.zeros((max_value_count,), dtype=np.uint32)
         for out_y in range(out_h):
-            src_yf0 = scale_y * out_y
+            src_yf0 = y_offset + scale_y * out_y
             src_yf1 = src_yf0 + scale_y
             src_y0 = int(src_yf0)
             src_y1 = int(src_yf1)
@@ -367,7 +425,7 @@ def _downsample_2d(src, mask, use_mask, method, fill_value, mode_rank, out):
                 if src_y1 > src_y0:
                     src_y1 -= 1
             for out_x in range(out_w):
-                src_xf0 = scale_x * out_x
+                src_xf0 = x_offset + scale_x * out_x
                 src_xf1 = src_xf0 + scale_x
                 src_x0 = int(src_xf0)
                 src_x1 = int(src_xf1)
@@ -419,7 +477,7 @@ def _downsample_2d(src, mask, use_mask, method, fill_value, mode_rank, out):
 
     elif method == DS_MEAN:
         for out_y in range(out_h):
-            src_yf0 = scale_y * out_y
+            src_yf0 = y_offset + scale_y * out_y
             src_yf1 = src_yf0 + scale_y
             src_y0 = int(src_yf0)
             src_y1 = int(src_yf1)
@@ -430,7 +488,7 @@ def _downsample_2d(src, mask, use_mask, method, fill_value, mode_rank, out):
                 if src_y1 > src_y0:
                     src_y1 -= 1
             for out_x in range(out_w):
-                src_xf0 = scale_x * out_x
+                src_xf0 = x_offset + scale_x * out_x
                 src_xf1 = src_xf0 + scale_x
                 src_x0 = int(src_xf0)
                 src_x1 = int(src_xf1)
@@ -458,7 +516,7 @@ def _downsample_2d(src, mask, use_mask, method, fill_value, mode_rank, out):
 
     elif method == DS_VAR or method == DS_STD:
         for out_y in range(out_h):
-            src_yf0 = scale_y * out_y
+            src_yf0 = y_offset + scale_y * out_y
             src_yf1 = src_yf0 + scale_y
             src_y0 = int(src_yf0)
             src_y1 = int(src_yf1)
@@ -469,7 +527,7 @@ def _downsample_2d(src, mask, use_mask, method, fill_value, mode_rank, out):
                 if src_y1 > src_y0:
                     src_y1 -= 1
             for out_x in range(out_w):
-                src_xf0 = scale_x * out_x
+                src_xf0 = x_offset + scale_x * out_x
                 src_xf1 = src_xf0 + scale_x
                 src_x0 = int(src_xf0)
                 src_x1 = int(src_xf1)
